@@ -153,7 +153,7 @@ public class PortingUtils {
         Dimension screenSize = getScreenBounds().getSize();
 
         // jdk1.4 only
-        if (invoker != null && !(invoker instanceof JApplet) && invoker.getGraphicsConfiguration() != null) {
+        if (invoker != null && invoker.getGraphicsConfiguration() != null) {
             Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(invoker.getGraphicsConfiguration());
             screenSize.width -= insets.left + insets.right;
             screenSize.height -= insets.top + insets.bottom;
@@ -172,7 +172,7 @@ public class PortingUtils {
 //      ensureScreenBounds();
 
         // jdk1.4 only
-        if (invoker != null && !(invoker instanceof JApplet) && invoker.getGraphicsConfiguration() != null) {
+        if (invoker != null && invoker.getGraphicsConfiguration() != null) {
             // to handle multi-display case
             GraphicsConfiguration gc = invoker.getGraphicsConfiguration();
             Rectangle bounds = gc.getBounds();
@@ -200,7 +200,7 @@ public class PortingUtils {
 
         // TODO
         // jdk1.4 only
-        if (invoker != null && !(invoker instanceof JApplet) && invoker.getGraphicsConfiguration() != null) {
+        if (invoker != null && invoker.getGraphicsConfiguration() != null) {
             Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(invoker.getGraphicsConfiguration());
             bounds.x += insets.left;
             bounds.y += insets.top;

@@ -3637,7 +3637,7 @@ public class JideSwingUtilities implements SwingConstants {
                     return lastRootPane;
                 }
                 if (c.getParent() instanceof JDialog || c.getParent() instanceof JWindow
-                        || c.getParent() instanceof JFrame || c.getParent() instanceof JApplet) {
+                        || c.getParent() instanceof JFrame) {
                     return lastRootPane;
                 }
                 c = c.getParent().getParent();

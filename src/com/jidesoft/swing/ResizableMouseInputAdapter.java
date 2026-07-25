@@ -167,10 +167,6 @@ public class ResizableMouseInputAdapter extends MouseInputAdapter {
                 ((JFrame) c).getGlassPane().setVisible(true);
                 ((JFrame) c).getGlassPane().setCursor(s);
             }
-            else if (c instanceof JApplet) {
-                ((JApplet) c).getGlassPane().setVisible(true);
-                ((JApplet) c).getGlassPane().setCursor(s);
-            }
             else if (c instanceof JWindow) {
                 ((JWindow) c).getGlassPane().setVisible(true);
                 ((JWindow) c).getGlassPane().setCursor(s);
@@ -625,10 +621,6 @@ public class ResizableMouseInputAdapter extends MouseInputAdapter {
                 ((JFrame) _resizable.getComponent().getTopLevelAncestor()).getGlassPane().setCursor(Cursor.getDefaultCursor());
 
                 ((JFrame) _resizable.getComponent().getTopLevelAncestor()).getGlassPane().setVisible(false);
-            }
-            else if (c instanceof JApplet) {
-                ((JApplet) c).getGlassPane().setCursor(Cursor.getDefaultCursor());
-                ((JApplet) c).getGlassPane().setVisible(false);
             }
             else if (c instanceof JWindow) {
                 ((JWindow) c).getGlassPane().setCursor(Cursor.getDefaultCursor());

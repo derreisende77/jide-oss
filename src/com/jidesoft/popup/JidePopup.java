@@ -22,7 +22,6 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
-import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -746,9 +745,6 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
      * Shows the popup. By default, it will show right below the owner.
      */
     public void showPopup() {
-//David: To account for a popup within a popup, let the caller specify an owner
-//  different from the RootPaneContainer(Applet) or ContentContainer.
-//          showPopup(new Insets(0, 0, 0, 0));
         showPopup(new Insets(0, 0, 0, 0), null);
     }
 
@@ -757,8 +753,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
      * the same as setOwner followed by showPopup() except in this case, the owner is only temporarily used to create
      * the popup. It will not be added to excludedComponent list as setOwner would do.
      *
-     * @param owner the popup window's owner; if unspecified, it will default to the RootPaneContainer(Applet) or
-     *              ContentContainer
+     * @param owner the popup window's owner; if unspecified, it will use the owner set via {@link #setOwner(Component)}
      */
     public void showPopup(Component owner) {
         showPopup(new Insets(0, 0, 0, 0), owner);
@@ -767,7 +762,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
     /**
      * Shows the popup. By default, it will show right below the owner after considering the insets.
      *
-     * @param insets the popup's insets RootPaneContainer(Applet) or ContentContainer
+     * @param insets the popup's insets
      */
     public void showPopup(Insets insets) {
         showPopup(insets, null);
@@ -780,8 +775,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
      * owner is not displayed (isShowing returns false), the popup will not be displayed either.
      *
      * @param insets the popup's insets
-     * @param owner  the popup window's owner; if unspecified, it will default to the RootPaneContainer(Applet) or
-     *               ContentContainer
+     * @param owner the popup window's owner; if unspecified, it will use the owner set via {@link #setOwner(Component)}
      */
     public void showPopup(Insets insets, Component owner) {
         _insets = insets;
@@ -901,7 +895,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
         }
 
         for (Component p = component; p != null; p = p.getParent()) {
-            if (p instanceof Window || p instanceof Applet) {
+            if (p instanceof Window) {
                 return p;
             }
         }
@@ -933,8 +927,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
      * You can change it by setting {@link #DISTANCE_TO_SCREEN_BORDER}.
      *
      * @param location the new location
-     * @param owner    the popup window's owner; if unspecified, it will default to the RootPaneContainer(Applet) or
-     *                 ContentContainer
+     * @param owner    the popup window's owner; if unspecified, it will use the owner set via {@link #setOwner(Component)}
      */
     public void showPopup(int location, Component owner) {
         setDetached(true);
@@ -1033,9 +1026,6 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
             _window.pack();
         }
     }
-
-//David: To account for a popup within a popup, let the caller specify an owner
-//  different from the RootPaneContainer(Applet) or ContentContainer.
 
     protected void internalShowPopup(int x, int y) {
         internalShowPopup(x, y, null);
@@ -1177,8 +1167,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
      *
      * @param x     the x position. It is screen position.
      * @param y     the y position. It is screen position.
-     * @param owner the popup window's owner; if unspecified, it will default to the RootPaneContainer(Applet) or
-     *              ContentContainer
+     * @param owner the popup window's owner; if unspecified, it will use the owner set via {@link #setOwner(Component)}
      */
     public void showPopup(int x, int y, Component owner) {
         internalShowPopup(x, y, owner);
@@ -1621,7 +1610,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
                 x = c.getX();
                 y = c.getY();
             }
-            else if (c instanceof java.applet.Applet || (startInFloat ? c instanceof Window : c instanceof JFrame)) {
+            else if (startInFloat ? c instanceof Window : c instanceof JFrame) {
                 try {
                     Point pp = c.getLocationOnScreen();
                     x = pp.x;
@@ -1640,7 +1629,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
             p.x += x;
             p.y += y;
 
-            if ((startInFloat ? c instanceof Window : c instanceof JFrame) || c instanceof java.applet.Applet)
+            if ((startInFloat ? c instanceof Window : c instanceof JFrame))
                 break;
             c = c.getParent();
         }
