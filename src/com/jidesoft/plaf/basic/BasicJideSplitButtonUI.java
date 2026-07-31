@@ -1,5 +1,5 @@
 /*
- * @(#)VsnetMenuUI.java
+ * @(#)BasicJideSplitButtonUI.java
  *
  * Copyright 2002 JIDE Software Inc. All rights reserved.
  */
@@ -9,9 +9,7 @@ package com.jidesoft.plaf.basic;
 import com.jidesoft.icons.IconsFactory;
 import com.jidesoft.plaf.LookAndFeelFactory;
 import com.jidesoft.plaf.UIDefaultsLookup;
-import com.jidesoft.plaf.vsnet.VsnetMenuUI;
 import com.jidesoft.swing.*;
-import com.jidesoft.utils.SecurityUtils;
 
 import javax.swing.*;
 import javax.swing.event.MouseInputListener;
@@ -28,7 +26,7 @@ import java.util.ArrayList;
 /**
  * SplitButtonUI implementation
  */
-public class BasicJideSplitButtonUI extends VsnetMenuUI {
+public class BasicJideSplitButtonUI extends BasicJideMenuUI {
 
     protected ThemePainter _painter;
 
@@ -269,7 +267,7 @@ public class BasicJideSplitButtonUI extends VsnetMenuUI {
                 rect = getDropDownRect(b, orientation, menuWidth, menuHeight);
                 getPainter().paintButtonBackground(b, g, rect, orientation, ThemePainter.STATE_ROLLOVER);
             }
-            else if (model instanceof SplitButtonModel && ((DefaultSplitButtonModel) model).isButtonSelected()) {
+            else if (model instanceof SplitButtonModel && ((SplitButtonModel) model).isButtonSelected()) {
                 if ((isMouseOver() || b.hasFocus()) && model.isEnabled()) {
                     Rectangle rect = getDropDownRect(b, orientation, menuWidth, menuHeight);
                     getPainter().paintButtonBackground(b, g, rect, orientation, ThemePainter.STATE_ROLLOVER);
@@ -320,7 +318,7 @@ public class BasicJideSplitButtonUI extends VsnetMenuUI {
                     else {
                         getPainter().paintButtonBackground(b, g, rect, 0, ThemePainter.STATE_DISABLE);
                     }
-                    if ("true".equals(SecurityUtils.getProperty("shadingtheme", "false"))) {
+                    if ("true".equals(System.getProperty("shadingtheme", "false"))) {
                         JideSwingUtilities.fillGradient(g, rect, SwingConstants.HORIZONTAL);
                     }
                     rect = getDropDownRect(b, orientation, menuWidth, menuHeight);
@@ -330,7 +328,7 @@ public class BasicJideSplitButtonUI extends VsnetMenuUI {
                     else {
                         getPainter().paintButtonBackground(b, g, rect, 0, ThemePainter.STATE_DISABLE);
                     }
-                    if ("true".equals(SecurityUtils.getProperty("shadingtheme", "false"))) {
+                    if ("true".equals(System.getProperty("shadingtheme", "false"))) {
                         JideSwingUtilities.fillGradient(g, rect, SwingConstants.HORIZONTAL);
                     }
                 }
@@ -356,7 +354,7 @@ public class BasicJideSplitButtonUI extends VsnetMenuUI {
                     paintRaisedBorder(g, rect);
                 }
             }
-            else if (model instanceof SplitButtonModel && ((DefaultSplitButtonModel) model).isButtonSelected()) {
+            else if (model instanceof SplitButtonModel && ((SplitButtonModel) model).isButtonSelected()) {
                 if ((isMouseOver() || b.hasFocus()) && model.isEnabled()) {
                     Rectangle rect = getDropDownRect(b, orientation, menuWidth, menuHeight);
                     JideSwingUtilities.paintBackground(g, rect, _highlight, _highlight);
@@ -442,7 +440,7 @@ public class BasicJideSplitButtonUI extends VsnetMenuUI {
                     paintRaisedBorder(g, rect);
                 }
             }
-            else if (model instanceof SplitButtonModel && ((DefaultSplitButtonModel) model).isButtonSelected()) {
+            else if (model instanceof SplitButtonModel && ((SplitButtonModel) model).isButtonSelected()) {
                 if (isMouseOver() && model.isEnabled()) {
                     Rectangle rect = getDropDownRect(b, orientation, menuWidth, menuHeight);
                     getPainter().paintButtonBackground(b, g, rect, orientation, ThemePainter.STATE_ROLLOVER);
@@ -1064,7 +1062,7 @@ public class BasicJideSplitButtonUI extends VsnetMenuUI {
                 boolean enabled = model.isEnabled() && (!(model instanceof SplitButtonModel) || ((SplitButtonModel) model).isButtonEnabled());
                 if (isFloatingIcon() && enabled) {
                     if (model.isRollover() && !model.isPressed() && !model.isSelected()) {
-                        if (!"true".equals(SecurityUtils.getProperty("shadingtheme", "false"))) {
+                        if (!"true".equals(System.getProperty("shadingtheme", "false"))) {
                             if (icon instanceof ImageIcon) {
                                 ImageIcon shadow = IconsFactory.createGrayImage(((ImageIcon) icon).getImage());
                                 shadow.paintIcon(b, g, iconRect.x + 1, iconRect.y + 1);

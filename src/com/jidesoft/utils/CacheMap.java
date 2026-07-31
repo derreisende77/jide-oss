@@ -15,9 +15,16 @@ import java.util.*;
  */
 public class CacheMap<T, K> {
 
-    private HashMap<Class<?>, Cache<K, T>> _cache = new HashMap<Class<?>, Cache<K, T>>();
+    private static final ClassValue<List<Class<?>>> CLASS_SEARCH_ORDER = new ClassValue<>() {
+        @Override
+        protected List<Class<?>> computeValue(Class<?> type) {
+            return createClassSearchOrder(type);
+        }
+    };
 
-    private K _defaultContext; // used for fallback lookup.
+    private final HashMap<Class<?>, Cache<K, T>> _cache = new HashMap<>();
+
+    private final K _defaultContext; // used for fallback lookup.
 
     /**
      * Constructs a <code>CacheMap</code>.
@@ -72,15 +79,7 @@ public class CacheMap<T, K> {
     }
 
     protected Cache<K, T> initCache(Class<?> clazz) {
-        Cache<K, T> cache = getCache(clazz);
-        if (cache != null) {
-            return cache;
-        }
-        else {
-            cache = new Cache<K, T>();
-            _cache.put(clazz, cache);
-            return cache;
-        }
+        return _cache.computeIfAbsent(clazz, ignored -> new Cache<>());
     }
 
     /**
@@ -138,93 +137,73 @@ public class CacheMap<T, K> {
         }
 
         Cache<K, T> cache = getCache(clazz);
-
-        if (cache == null || !cache.containsKey(context)) {
-            List<Class<?>> classesToSearch = new ArrayList<Class<?>>();
-
-            classesToSearch.add(clazz);
-            if (TypeUtils.isPrimitive(clazz)) {
-                classesToSearch.add(TypeUtils.convertPrimitiveToWrapperType(clazz));
-            }
-            else if (TypeUtils.isPrimitiveWrapper(clazz)) {
-                classesToSearch.add(TypeUtils.convertWrapperToPrimitiveType(clazz));
-            }
-
-            // Direct super interfaces, recursively
-            Class<?>[] interfaces = clazz.getInterfaces();
-            classesToSearch.addAll(Arrays.asList(interfaces));
-
-            Class<?> superClass = clazz;
-            // Direct super class, recursively
-            while (!superClass.isInterface()) {
-                superClass = superClass.getSuperclass();
-                if (superClass != null) {
-                    classesToSearch.add(superClass);
-                    interfaces = superClass.getInterfaces();
-                    classesToSearch.addAll(Arrays.asList(interfaces));
-                }
-                else {
-                    break;
-                }
-            }
-
-            List<Class<?>> interfacesToSearch = new ArrayList<Class<?>>();
-            for (Class<?> aClass : classesToSearch) {
-                if (aClass.isInterface()) {
-                    addInterface(aClass, interfacesToSearch, classesToSearch);
-                }
-            }
-            classesToSearch.addAll(interfacesToSearch);
-
-            classesToSearch.remove(Object.class);
-            classesToSearch.add(Object.class);  // use Object as the last default fallback.
-
-            // search to match context first
-            for (Class<?> c : classesToSearch) {
-                Cache<K, T> cacheForClass = getCache(c);
-                if (cacheForClass != null) {
-                    T object = cacheForClass.getObject(context);
-                    if (object != null) {
-                        return object;
-                    }
-                }
-            }
-
-            // fall back to default context
-            if (!_defaultContext.equals(context)) {
-                for (Class<?> c : classesToSearch) {
-                    Cache<K, T> cacheForClass = getCache(c);
-                    if (cacheForClass != null) {
-                        T object = cacheForClass.getObject(_defaultContext);
-                        if (object != null) {
-                            return object;
-                        }
-                    }
-                }
-            }
-        }
-
         if (cache != null) {
             T object = cache.getObject(context);
-            if (object == null && !_defaultContext.equals(context)) {
-                return getRegisteredObject(clazz, _defaultContext);
-            }
             if (object != null) {
                 return object;
             }
         }
 
+        List<Class<?>> classesToSearch = CLASS_SEARCH_ORDER.get(clazz);
+        T object = findRegisteredObject(classesToSearch, context, 1);
+        if (object != null) {
+            return object;
+        }
+
+        return Objects.equals(_defaultContext, context)
+                ? null
+                : findRegisteredObject(classesToSearch, _defaultContext, 0);
+    }
+
+    private T findRegisteredObject(List<Class<?>> classesToSearch, K context, int startIndex) {
+        for (int i = startIndex; i < classesToSearch.size(); i++) {
+            Cache<K, T> cache = _cache.get(classesToSearch.get(i));
+            if (cache != null) {
+                T object = cache.getObject(context);
+                if (object != null) {
+                    return object;
+                }
+            }
+        }
         return null;
     }
 
-    private void addInterface(Class<?> anInterface, List<Class<?>> interfacesToSearch, List<Class<?>> classesToSearch) {
-        if (anInterface != null) {
-            Class<?>[] interfaces = anInterface.getInterfaces();
-            for (Class<?> superInterface : interfaces) {
-                if (!classesToSearch.contains(superInterface)) {
-                    interfacesToSearch.add(superInterface);
-                    addInterface(superInterface, interfacesToSearch, classesToSearch);
-                }
+    private static List<Class<?>> createClassSearchOrder(Class<?> clazz) {
+        Set<Class<?>> classesToSearch = new LinkedHashSet<>();
+        classesToSearch.add(clazz);
+
+        if (TypeUtils.isPrimitive(clazz)) {
+            classesToSearch.add(TypeUtils.convertPrimitiveToWrapperType(clazz));
+        }
+        else if (TypeUtils.isPrimitiveWrapper(clazz)) {
+            classesToSearch.add(TypeUtils.convertWrapperToPrimitiveType(clazz));
+        }
+
+        Collections.addAll(classesToSearch, clazz.getInterfaces());
+
+        if (!clazz.isInterface()) {
+            for (Class<?> superClass = clazz.getSuperclass(); superClass != null; superClass = superClass.getSuperclass()) {
+                classesToSearch.add(superClass);
+                Collections.addAll(classesToSearch, superClass.getInterfaces());
+            }
+        }
+
+        List<Class<?>> directTypes = List.copyOf(classesToSearch);
+        for (Class<?> type : directTypes) {
+            if (type.isInterface()) {
+                addSuperInterfaces(type, classesToSearch);
+            }
+        }
+
+        classesToSearch.remove(Object.class);
+        classesToSearch.add(Object.class); // use Object as the last default fallback.
+        return List.copyOf(classesToSearch);
+    }
+
+    private static void addSuperInterfaces(Class<?> type, Set<Class<?>> classesToSearch) {
+        for (Class<?> superInterface : type.getInterfaces()) {
+            if (classesToSearch.add(superInterface)) {
+                addSuperInterfaces(superInterface, classesToSearch);
             }
         }
     }
@@ -259,17 +238,11 @@ public class CacheMap<T, K> {
     }
 
     public List<T> getValues() {
-        List<T> list = new ArrayList<T>();
-        Collection<Cache<K, T>> col = _cache.values();
-        for (Cache<K, T> o : col) {
-            Collection<T> col2 = o.values();
-            for (T o2 : col2) {
-                if (!list.contains(o2)) {
-                    list.add(o2);
-                }
-            }
+        Set<T> values = new LinkedHashSet<>();
+        for (Cache<K, T> cache : _cache.values()) {
+            values.addAll(cache.values());
         }
-        return list;
+        return new ArrayList<>(values);
     }
 
     /**
@@ -299,7 +272,7 @@ public class CacheMap<T, K> {
     /**
      * List of listeners
      */
-    protected List<RegistrationListener> listenerList = new ArrayList<RegistrationListener>();
+    protected List<RegistrationListener> listenerList = new ArrayList<>();
 
     /**
      * Adds a listener to the list that's notified each time a change to the registration occurs.
@@ -329,7 +302,7 @@ public class CacheMap<T, K> {
      * @see #removeRegistrationListener
      */
     public RegistrationListener[] getRegistrationListeners() {
-        return listenerList.toArray(new RegistrationListener[listenerList.size()]);
+        return listenerList.toArray(RegistrationListener[]::new);
     }
 
     /**

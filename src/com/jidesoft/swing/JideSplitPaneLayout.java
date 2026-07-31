@@ -7,8 +7,6 @@
 
 package com.jidesoft.swing;
 
-import com.jidesoft.utils.SystemInfo;
-
 import javax.swing.*;
 import java.awt.*;
 import java.util.*;
@@ -79,8 +77,6 @@ public class JideSplitPaneLayout extends JideBoxLayout {
         int prevDividerIndex = reversed ? index + 1 : index - 1;
         int flexibleNextIndex;
         int flexiblePrevIndex;
-        java.util.List<Integer> componentIndexChanged = new ArrayList<Integer>();
-
         if (reversed) {
             while (nextIndex >= 0 && !isPaneVisible(nextIndex)) {
                 nextIndex -= 2;
@@ -178,15 +174,12 @@ public class JideSplitPaneLayout extends JideBoxLayout {
             }
             if (getConstraintMap().get(_target.getComponent(nextIndex)) != JideBoxLayout.FIX) {
                 _componentSizes[nextIndex] -= location - oldLocation;
-                componentIndexChanged.add(nextIndex);
             }
             if (isOriginator) {
                 _componentSizes[flexiblePrevIndex] += location - oldLocation;
-                componentIndexChanged.add(flexiblePrevIndex);
             }
             else if (getConstraintMap().get(_target.getComponent(prevIndex)) != JideBoxLayout.FIX) {
                 _componentSizes[prevIndex] += location - oldLocation;
-                componentIndexChanged.add(prevIndex);
             }
         }
         else if (location < oldLocation) {
@@ -219,25 +212,20 @@ public class JideSplitPaneLayout extends JideBoxLayout {
             }
             if (getConstraintMap().get(_target.getComponent(prevIndex)) != JideBoxLayout.FIX) {
                 _componentSizes[prevIndex] -= oldLocation - location;
-                componentIndexChanged.add(prevIndex);
             }
             if (isOriginator) {
                 _componentSizes[flexibleNextIndex] += oldLocation - location;
-                componentIndexChanged.add(flexibleNextIndex);
             }
             else if (getConstraintMap().get(_target.getComponent(nextIndex)) != JideBoxLayout.FIX) {
                 _componentSizes[nextIndex] += oldLocation - location;
-                componentIndexChanged.add(nextIndex);
             }
         }
 
-        if (SystemInfo.isJdk15Above()) {
-            if (_target instanceof JideSplitPane) {
-                ((JideSplitPane) _target).firePropertyChange(JideSplitPane.PROPERTY_DIVIDER_LOCATION, oldLocation, location);
-            }
-            else {
-                _target.firePropertyChange(JideSplitPane.PROPERTY_DIVIDER_LOCATION, oldLocation, location);
-            }
+        if (_target instanceof JideSplitPane) {
+            ((JideSplitPane) _target).firePropertyChange(JideSplitPane.PROPERTY_DIVIDER_LOCATION, oldLocation, location);
+        }
+        else {
+            _target.firePropertyChange(JideSplitPane.PROPERTY_DIVIDER_LOCATION, oldLocation, location);
         }
         ((JideSplitPane) _target).revalidate();
 

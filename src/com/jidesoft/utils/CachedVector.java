@@ -78,7 +78,7 @@ public class CachedVector<E> extends Vector<E> {
     }
 
     protected Map<Object, IntegerWrapper> createCache() {
-        return new IdentityHashMap<Object, IntegerWrapper>();
+        return new IdentityHashMap<>();
     }
 
     /**
@@ -225,7 +225,7 @@ public class CachedVector<E> extends Vector<E> {
      */
     public synchronized void cacheAll() {
         _indexCache = createCache();
-        Integer i = 0;
+        int i = 0;
         for (Object elem : this) {
             if (_indexCache.get(elem) == null) {
                 _indexCache.put(elem, new IntegerWrapper(i));

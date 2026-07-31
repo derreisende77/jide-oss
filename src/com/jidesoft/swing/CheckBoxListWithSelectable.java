@@ -125,7 +125,7 @@ public class CheckBoxListWithSelectable extends JList implements ItemSelectable 
      * @param elements the elements to be selected
      */
     public void setSelectedObjects(Object[] elements) {
-        Map<Object, String> selected = new HashMap<Object, String>();
+        Map<Object, String> selected = new HashMap<>();
         for (Object element : elements) {
             selected.put(element, "");
         }
@@ -138,7 +138,7 @@ public class CheckBoxListWithSelectable extends JList implements ItemSelectable 
      * @param objects the elements to be selected in a Vector.
      */
     public void setSelectedObjects(Vector<?> objects) {
-        Map<Object, String> selected = new HashMap<Object, String>();
+        Map<Object, String> selected = new HashMap<>();
         for (Object element : objects) {
             selected.put(element, "");
         }
@@ -168,16 +168,15 @@ public class CheckBoxListWithSelectable extends JList implements ItemSelectable 
     private void setSelectedObjects(Map<Object, String> selected) {
         for (int i = 0; i < getModel().getSize(); i++) {
             Object elementAt = getModel().getElementAt(i);
-            if (elementAt instanceof Selectable) {
-                Selectable selectable = (Selectable) elementAt;
-                if (selectable instanceof DefaultSelectable) {
-                    elementAt = ((DefaultSelectable) selectable).getObject();
+            if (elementAt instanceof Selectable selectable) {
+                if (selectable instanceof DefaultSelectable defaultSelectable) {
+                    elementAt = defaultSelectable.getObject();
                 }
                 if (selected.get(elementAt) != null) {
                     selectable.setSelected(true);
                     fireItemStateChanged(new ItemEvent(this, ItemEvent.ITEM_STATE_CHANGED, selectable, ItemEvent.SELECTED));
                     selected.remove(elementAt);
-                    if (selected.size() == 0) {
+                    if (selected.isEmpty()) {
                         break;
                     }
                 }
@@ -202,8 +201,8 @@ public class CheckBoxListWithSelectable extends JList implements ItemSelectable 
     }
 
     private static Selectable[] wrap(Object[] objects) {
-        if (objects instanceof Selectable[]) {
-            return (Selectable[]) objects;
+        if (objects instanceof Selectable[] selectables) {
+            return selectables;
         }
         else {
             Selectable[] elements = new Selectable[objects.length];
@@ -215,10 +214,10 @@ public class CheckBoxListWithSelectable extends JList implements ItemSelectable 
     }
 
     private static Vector<?> wrap(Vector<?> objects) {
-        Vector<Selectable> elements = new Vector<Selectable>();
+        Vector<Selectable> elements = new Vector<>();
         for (Object o : objects) {
-            if (o instanceof Selectable) {
-                elements.add((Selectable) o);
+            if (o instanceof Selectable selectable) {
+                elements.add(selectable);
             }
             else {
                 elements.add(new DefaultSelectable(o));
@@ -320,9 +319,9 @@ public class CheckBoxListWithSelectable extends JList implements ItemSelectable 
             ListModel model = _list.getModel();
             for (int index : indices) {
                 Object element = model.getElementAt(index);
-                if (element instanceof Selectable && ((Selectable) element).isEnabled()) {
-                    ((Selectable) element).invertSelected();
-                    boolean selected = ((Selectable) element).isSelected();
+                if (element instanceof Selectable selectable && selectable.isEnabled()) {
+                    selectable.invertSelected();
+                    boolean selected = selectable.isSelected();
                     _list.fireItemStateChanged(new ItemEvent(_list, ItemEvent.ITEM_STATE_CHANGED, element, selected ? ItemEvent.SELECTED : ItemEvent.DESELECTED));
                 }
             }
@@ -333,9 +332,9 @@ public class CheckBoxListWithSelectable extends JList implements ItemSelectable 
             ListModel model = _list.getModel();
             if (index >= 0) {
                 Object element = model.getElementAt(index);
-                if (element instanceof Selectable && ((Selectable) element).isEnabled()) {
-                    ((Selectable) element).invertSelected();
-                    boolean selected = ((Selectable) element).isSelected();
+                if (element instanceof Selectable selectable && selectable.isEnabled()) {
+                    selectable.invertSelected();
+                    boolean selected = selectable.isSelected();
                     _list.fireItemStateChanged(new ItemEvent(_list, ItemEvent.ITEM_STATE_CHANGED, element, selected ? ItemEvent.SELECTED : ItemEvent.DESELECTED));
                 }
                 _list.repaint();
@@ -418,11 +417,10 @@ public class CheckBoxListWithSelectable extends JList implements ItemSelectable 
         Vector<Object> elements = new Vector<Object>();
         for (int i = 0; i < getModel().getSize(); i++) {
             Object elementAt = getModel().getElementAt(i);
-            if (elementAt instanceof Selectable) {
-                Selectable selectable = (Selectable) elementAt;
+            if (elementAt instanceof Selectable selectable) {
                 if (selectable.isSelected()) {
-                    if (selectable instanceof DefaultSelectable) {
-                        elements.add(((DefaultSelectable) selectable).getObject());
+                    if (selectable instanceof DefaultSelectable defaultSelectable) {
+                        elements.add(defaultSelectable.getObject());
                     }
                     else {
                         elements.add(selectable);
@@ -439,8 +437,7 @@ public class CheckBoxListWithSelectable extends JList implements ItemSelectable 
     public void selectAll() {
         for (int i = 0; i < getModel().getSize(); i++) {
             Object elementAt = getModel().getElementAt(i);
-            if (elementAt instanceof Selectable) {
-                Selectable selectable = (Selectable) elementAt;
+            if (elementAt instanceof Selectable selectable) {
                 if (selectable.isEnabled() && !selectable.isSelected()) {
                     selectable.setSelected(true);
                     fireItemStateChanged(new ItemEvent(this, ItemEvent.ITEM_STATE_CHANGED, selectable, ItemEvent.SELECTED));
@@ -456,8 +453,7 @@ public class CheckBoxListWithSelectable extends JList implements ItemSelectable 
     public void selectNone() {
         for (int i = 0; i < getModel().getSize(); i++) {
             Object elementAt = getModel().getElementAt(i);
-            if (elementAt instanceof Selectable) {
-                Selectable selectable = (Selectable) elementAt;
+            if (elementAt instanceof Selectable selectable) {
                 if (selectable.isEnabled() && selectable.isSelected()) {
                     selectable.setSelected(false);
                     fireItemStateChanged(new ItemEvent(this, ItemEvent.ITEM_STATE_CHANGED, selectable, ItemEvent.DESELECTED));

@@ -25,7 +25,7 @@ public class RangeConverter implements ObjectConverter {
      * Creates an ArrayConverter.
      *
      * @param elementClass class of the array element. Assume all elements have the same class type. If not, use the
-     *                     constructor which takes Class<?>[] as parameter.
+     *                     constructor which takes {@code Class<?>[]} as parameter.
      */
     public RangeConverter(Class<?> elementClass) {
         _elementClass = elementClass;

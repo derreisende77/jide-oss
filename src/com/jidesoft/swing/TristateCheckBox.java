@@ -17,30 +17,20 @@ import java.awt.event.ActionListener;
  * Internally it uses a new class called {@link TristateButtonModel} to store the 3rd mixed state information.
  * <p/>
  * The mixed state uses a different check icon. Instead of a checked sign in the selected state as in a regular check
- * box, we use a square sign to indicate the mixed state. On different L&Fs, it might look different. TristateCheckBox
- * supports most of the standard L&Fs such as Windows L&F, Metal L&F, Motif L&F, Nimbus L&F, Aqua L&F etc. For most
- * L&Fs, we use a new UIDefault "TristateCheckBox.icon" to paint in three different states. However for Aqua L&F, we
- * actually leveraged a client property provided by Apple to display the icon for the mixed state (refer to Radar
- * #8930094 at http://developer.apple.com/library/mac/#releasenotes/Java/JavaSnowLeopardUpdate4LeopardUpdate9RN/ResolvedIssues/ResolvedIssues.html).
- * To make it extensible for other L&Fs who might provide a built-in mixed state for check box, we support two types of
- * customizations.
+ * box, we use a square sign to indicate the mixed state. The {@code TristateCheckBox.icon} UI default can provide an
+ * icon that paints all three states. FlatLaf's built-in indeterminate state can instead be selected through client
+ * properties:
  * <pre>
- * <ul>
- *     <li>using client property as Aqua. You can define your own client properties and use UIDefaults to tell us how
- * to set it. For example: </li>
  * "TristateCheckBox.icon", null,
  * "TristateCheckBox.setMixed.clientProperty", new Object[]{"JButton.selectedState", "indeterminate"},
  * "TristateCheckBox.clearMixed.clientProperty", new Object[]{"JButton.selectedState", null},
- * </ul>using component name. Some Synth-based L&Fs use component name to define style. If so, you can use the
- * following two UIDefaults. For example: </li>
- * "TristateCheckBox.setMixed.componentName", "HalfSelected",
- * "TristateCheckBox.clearMixed.componentName", "",
  * </pre>
  * The correct listener for state change is ActionListener. It will be fired when the state is changed. The ItemListener
  * is only fired when changing from selected state to unselected state or vice versa. Only ActionListener will be fired
  * for all three states.
  */
 public class TristateCheckBox extends JCheckBox implements ActionListener {
+    private static final String ORIGINAL_ICON_PROPERTY = "TristateCheckBox.originalIcon";
     public static final int STATE_UNSELECTED = 0;
     public static final int STATE_SELECTED = 1;
     public static final int STATE_MIXED = 2;
@@ -87,11 +77,19 @@ public class TristateCheckBox extends JCheckBox implements ActionListener {
     }
 
     protected void adjustMixedIcon() {
+        if (getClientProperty(ORIGINAL_ICON_PROPERTY) == null) {
+            Icon icon = getIcon();
+            putClientProperty(ORIGINAL_ICON_PROPERTY, icon != null ? icon : Boolean.TRUE);
+        }
         setIcon(UIManager.getIcon("TristateCheckBox.icon"));
     }
 
     protected void restoreMixedIcon() {
-        setIcon(null);
+        Object icon = getClientProperty(ORIGINAL_ICON_PROPERTY);
+        if (icon != null) {
+            putClientProperty(ORIGINAL_ICON_PROPERTY, null);
+            setIcon(Boolean.TRUE.equals(icon) ? null : (Icon) icon);
+        }
     }
 
     /**
@@ -124,8 +122,8 @@ public class TristateCheckBox extends JCheckBox implements ActionListener {
      * @return one of the three selection states.
      */
     public int getState() {
-        if (model instanceof TristateButtonModel)
-            return ((TristateButtonModel) model).getState();
+        if (model instanceof TristateButtonModel tristateModel)
+            return tristateModel.getState();
         else {
             throw new IllegalStateException("TristateButtonModel is required for TristateCheckBox");
         }
@@ -148,9 +146,9 @@ public class TristateCheckBox extends JCheckBox implements ActionListener {
      * @param state one of the three selection states.
      */
     public void setState(int state) {
-        if (model instanceof TristateButtonModel) {
-            int old = ((TristateButtonModel) model).getState();
-            if (old != state) ((TristateButtonModel) model).setState(state);
+        if (model instanceof TristateButtonModel tristateModel) {
+            int old = tristateModel.getState();
+            if (old != state) tristateModel.setState(state);
             stateUpdated(state);
         }
         else {
@@ -173,22 +171,14 @@ public class TristateCheckBox extends JCheckBox implements ActionListener {
             adjustMixedIcon();
             Object cp = UIDefaultsLookup.get("TristateCheckBox.setMixed.clientProperty");
             if (cp != null) {
-                putClientProperty(((Object[]) cp)[0], ((Object[]) cp)[1]); // for Aqua L&F
-            }
-            String name = UIDefaultsLookup.getString("TristateCheckBox.setMixed.componentName");
-            if (name != null) {
-                setName(name); // for Synthetica
+                putClientProperty(((Object[]) cp)[0], ((Object[]) cp)[1]); // for L&F that uses client property
             }
         }
         else {
             restoreMixedIcon();
             Object cp = UIDefaultsLookup.get("TristateCheckBox.clearMixed.clientProperty");
             if (cp != null) {
-                putClientProperty(((Object[]) cp)[0], ((Object[]) cp)[1]); // for Aqua L&F
-            }
-            String name = UIDefaultsLookup.getString("TristateCheckBox.clearMixed.componentName");
-            if (name != null) {
-                setName(name); // for Synthetica
+                putClientProperty(((Object[]) cp)[0], ((Object[]) cp)[1]); // for L&F that uses client property
             }
         }
     }

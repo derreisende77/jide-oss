@@ -6,7 +6,6 @@
 package com.jidesoft.icons;
 
 import com.jidesoft.swing.JideSwingUtilities;
-import com.jidesoft.utils.SecurityUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -159,7 +158,7 @@ public class IconsFactory {
      * If you don't know what key to use, just put a breakpoint at this method, run it to inspect the id variable
      * below.
      *
-     * @param clazz    the Class<?>
+     * @param clazz    the {@code Class<?>}
      * @param fileName relative file name
      * @return the ImageIcon
      */
@@ -182,7 +181,7 @@ public class IconsFactory {
     /**
      * Gets ImageIcon by passing class and a relative image file path.
      *
-     * @param clazz    the Class<?>
+     * @param clazz    the {@code Class<?>}
      * @param fileName relative file name
      * @return the ImageIcon
      * @throws IOException when image file is not found.
@@ -206,7 +205,7 @@ public class IconsFactory {
     /**
      * Gets a disabled version of ImageIcon by passing class and a relative image file path.
      *
-     * @param clazz    the Class<?>
+     * @param clazz    the {@code Class<?>}
      * @param fileName relative file name
      * @return the ImageIcon
      */
@@ -225,7 +224,7 @@ public class IconsFactory {
     /**
      * Gets a brighter ImageIcon by passing class and a relative image file path.
      *
-     * @param clazz    the Class<?>
+     * @param clazz    the {@code Class<?>}
      * @param fileName relative file name
      * @return the ImageIcon
      */
@@ -244,7 +243,7 @@ public class IconsFactory {
     /**
      * Gets a brighter ImageIcon by passing class, a relative image file path and a percentage of brightness.
      *
-     * @param clazz    the Class<?>
+     * @param clazz    the {@code Class<?>}
      * @param fileName relative file name
      * @param percent  percentage of brightness
      * @return the ImageIcon
@@ -264,7 +263,7 @@ public class IconsFactory {
     /**
      * Gets a tinted ImageIcon by passing class, a relative image file path and a color.
      *
-     * @param clazz    the Class<?>
+     * @param clazz    the {@code Class<?>}
      * @param fileName relative file name
      * @param color    the color
      * @return the ImageIcon
@@ -555,7 +554,7 @@ public class IconsFactory {
         }
         else {
             Image image;
-            if ("true".equals(SecurityUtils.getProperty("jide.useImageIO", "true"))) {
+            if ("true".equals(System.getProperty("jide.useImageIO", "true"))) {
                 image = ImageIO.read(resource);
             }
             else {

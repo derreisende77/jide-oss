@@ -54,7 +54,7 @@ public class JCellRendererPane extends JComponent implements Accessible {
 
 
     /**
-     * If the specified component is already a child of this then we don't bother doing anything - stacking order doesn't matter for cell renderer components (CellRendererPane doesn't paint anyway).<
+     * If the specified component is already a child of this then we don't bother doing anything - stacking order doesn't matter for cell renderer components (CellRendererPane doesn't paint anyway).
      */
     @Override
     protected void addImpl(Component x, Object constraints, int index) {

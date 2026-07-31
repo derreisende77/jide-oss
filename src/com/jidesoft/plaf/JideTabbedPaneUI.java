@@ -17,7 +17,7 @@ public abstract class JideTabbedPaneUI extends TabbedPaneUI {
     /**
      * Gets the tab panel for the JideTabbedPane. The tab panel contains all the tabs and the tabbed pane buttons (close, scroll left/right, list buttons).
      * Sometimes you have to use this tab panel. For example, if you want to add a mouse listener to get double click event on tabs, you must use this tab panel to add
-     * mouse listener. In addition, as the tab panel is part of the TabbedPaneUI which is recreated when updateUI is called (which usually happens after switching L&F), you should
+     * mouse listener. In addition, as the tab panel is part of the TabbedPaneUI which is recreated when updateUI is called (which usually happens after switching look and feel), you should
      * override updateUI method in JideTabbedPane to add mouse listener so that it will get added again after updateUI.
      *
      * @return the tab panel.

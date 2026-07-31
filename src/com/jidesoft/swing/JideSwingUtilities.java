@@ -8,9 +8,7 @@ package com.jidesoft.swing;
 import com.jidesoft.dialog.ButtonPanel;
 import com.jidesoft.dialog.ButtonResources;
 import com.jidesoft.plaf.UIDefaultsLookup;
-import com.jidesoft.plaf.WindowsDesktopProperty;
 import com.jidesoft.plaf.basic.ThemePainter;
-import com.jidesoft.utils.SecurityUtils;
 import com.jidesoft.utils.SystemInfo;
 
 import javax.swing.*;
@@ -21,7 +19,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.TableModelListener;
-import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.UIResource;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
@@ -37,7 +34,6 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.*;
-import java.security.AccessControlException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
@@ -66,7 +62,7 @@ public class JideSwingUtilities implements SwingConstants {
             new StringBuffer("AATextPropertyKey");
 
     static {
-        Object aa = SecurityUtils.getProperty("swing.aatext", "false");
+        Object aa = System.getProperty("swing.aatext", "false");
         AA_TEXT_DEFINED = (aa != null);
         AA_TEXT = "true".equals(aa);
     }
@@ -271,13 +267,13 @@ public class JideSwingUtilities implements SwingConstants {
     public static Frame getFrame(Component component) {
         if (component == null) return null;
 
-        if (component instanceof Frame) return (Frame) component;
+        if (component instanceof Frame frame) return frame;
 
         // Find frame
         Container p = component.getParent();
         while (p != null) {
-            if (p instanceof Frame) {
-                return (Frame) p;
+            if (p instanceof Frame frame) {
+                return frame;
             }
             p = p.getParent();
         }
@@ -546,8 +542,8 @@ public class JideSwingUtilities implements SwingConstants {
         else if (o1 == null) {
             return false;
         }
-        else if (o1 instanceof CharSequence && o2 instanceof CharSequence) {
-            return equals((CharSequence) o1, (CharSequence) o2, caseSensitive);
+        else if (o1 instanceof CharSequence sequence1 && o2 instanceof CharSequence sequence2) {
+            return equals(sequence1, sequence2, caseSensitive);
         }
         else if (o1 instanceof Comparable && o2 instanceof Comparable && o1.getClass().isAssignableFrom(o2.getClass())) {
             return ((Comparable) o1).compareTo(o2) == 0;
@@ -555,14 +551,14 @@ public class JideSwingUtilities implements SwingConstants {
         else if (o1 instanceof Comparable && o2 instanceof Comparable && o2.getClass().isAssignableFrom(o1.getClass())) {
             return ((Comparable) o2).compareTo(o1) == 0;
         }
-        else if (considerArrayOrList && o1 instanceof List && o2 instanceof List) {
-            int length1 = ((List) o1).size();
-            int length2 = ((List) o2).size();
+        else if (considerArrayOrList && o1 instanceof List list1 && o2 instanceof List list2) {
+            int length1 = list1.size();
+            int length2 = list2.size();
             if (length1 != length2) {
                 return false;
             }
             for (int i = 0; i < length1; i++) {
-                if (!equals(((List) o1).get(i), ((List) o2).get(i), true)) {
+                if (!equals(list1.get(i), list2.get(i), true)) {
                     return false;
                 }
             }
@@ -737,109 +733,15 @@ public class JideSwingUtilities implements SwingConstants {
         return ActionEvent.ALT_MASK;
     }
 
-    private static class GetPropertyAction
-            implements java.security.PrivilegedAction {
-        private String theProp;
-        private String defaultVal;
-
-        /**
-         * Constructor that takes the name of the system property whose string value needs to be determined.
-         *
-         * @param theProp the name of the system property.
-         */
-        public GetPropertyAction(String theProp) {
-            this.theProp = theProp;
-        }
-
-        /**
-         * Constructor that takes the name of the system property and the default value of that property.
-         *
-         * @param theProp    the name of the system property.
-         * @param defaultVal the default value.
-         */
-        public GetPropertyAction(String theProp, String defaultVal) {
-            this.theProp = theProp;
-            this.defaultVal = defaultVal;
-        }
-
-        /**
-         * Determines the string value of the system property whose name was specified in the constructor.
-         *
-         * @return the string value of the system property, or the default value if there is no property with that key.
-         */
-        public Object run() {
-            String value = System.getProperty(theProp);
-            return (value == null) ? defaultVal : value;
-        }
-    }
-
-    /**
-     * In JDK1.4, it uses a wrong font for Swing component in Windows L&F which is actually one big reason for people to
-     * think Swing application ugly. To address this issue, we changed the code to force to use Tahoma font for all the
-     * fonts in L&F instead of using the system font.
-     * <p/>
-     * However this is a downside to this. Tahoma cannot display Unicode characters such as Chinese, Japanese and
-     * Korean. So if the locale is CJK ({@link SystemInfo#isCJKLocale()}, we shouldn't use Tahoma. If you are on JDK 1.5
-     * and above, you shouldn't force to use Tahoma either because JDK fixed it in 1.5 and above.
-     * <p/>
-     * There are also a few system properties you can set to control if system font should be used.
-     * "swing.useSystemFontSettings" is the one for all Swing applications. "Application.useSystemFontSettings" is the
-     * one for a particular Swing application.
-     * <p/>
-     * This method considers all the cases above. If JDK is 1.5 and above, this method will return true. If you are on
-     * Chinese, Japanese or Korean locale, it will return true. If "swing.useSystemFontSettings" property us true, it
-     * will return true. If "Application.useSystemFontSettings" property is true, it will return true. Otherwise, it
-     * will return false. All JIDE L&F considered the returned value and decide if Tahoma font should be used or not.
-     * <p/>
-     * Last but the least, we also add system property "jide.useSystemfont" which has the highest priority. If you set
-     * it to "true" or "false", this method will just check that value and return true or false respectively without
-     * looking at any other settings.
-     *
-     * @return true if the L&F should use system font.
-     */
-    public static boolean shouldUseSystemFont() {
-        String property = SecurityUtils.getProperty("jide.useSystemfont", "");
-        if ("false".equals(property)) {
-            return false;
-        }
-        else if ("true".equals(property)) {
-            return true;
-        }
-
-        if (SystemInfo.isJdk15Above() || SystemInfo.isCJKLocale()) {
-            return true;
-        }
-
-        String systemFonts = null;
-        try {
-            systemFonts = (String) java.security.AccessController.doPrivileged(new GetPropertyAction("swing.useSystemFontSettings"));
-        }
-        catch (AccessControlException e) {
-            // ignore
-        }
-
-        boolean useSystemFontSettings = (systemFonts != null &&
-                Boolean.valueOf(systemFonts));
-
-        if (useSystemFontSettings) {
-            Object value = UIDefaultsLookup.get("Application.useSystemFontSettings");
-
-            useSystemFontSettings = (value != null ||
-                    Boolean.TRUE.equals(value));
-        }
-
-        return "true".equals(SecurityUtils.getProperty("defaultFont", "false")) || useSystemFontSettings;
-    }
-
     public static void printUIDefaults() {
         Enumeration e = UIManager.getDefaults().keys();
-        java.util.List<String> list = new ArrayList<String>();
+        java.util.List<String> list = new ArrayList<>();
 
         System.out.println("Non-string keys ---");
         while (e.hasMoreElements()) {
             Object key = e.nextElement();
-            if (key instanceof String) {
-                list.add((String) key);
+            if (key instanceof String stringKey) {
+                list.add(stringKey);
             }
             else {
                 System.out.println(key + " => " + UIDefaultsLookup.get(key));
@@ -967,24 +869,23 @@ public class JideSwingUtilities implements SwingConstants {
             handler.action(c);
         }
 
-        if (handler instanceof ConditionHandler && ((ConditionHandler) handler).stopCondition(c)) {
+        if (handler instanceof ConditionHandler conditionHandler && conditionHandler.stopCondition(c)) {
             return;
         }
 
         Component[] children = null;
 
-        if (c instanceof JMenu) {
-            children = ((JMenu) c).getMenuComponents();
+        if (c instanceof JMenu menu) {
+            children = menu.getMenuComponents();
         }
-        else if (c instanceof JTabbedPane) {
-            JTabbedPane tabbedPane = (JTabbedPane) c;
+        else if (c instanceof JTabbedPane tabbedPane) {
             children = new Component[tabbedPane.getTabCount()];
             for (int i = 0; i < children.length; i++) {
                 children[i] = tabbedPane.getComponentAt(i);
             }
         }
-        else if (c instanceof Container) {
-            children = ((Container) c).getComponents();
+        else if (c instanceof Container container) {
+            children = container.getComponents();
         }
         if (children != null) {
             for (Component child : children) {
@@ -1063,11 +964,11 @@ public class JideSwingUtilities implements SwingConstants {
 
         Component[] children = null;
 
-        if (c instanceof JMenu) {
-            children = ((JMenu) c).getMenuComponents();
+        if (c instanceof JMenu menu) {
+            children = menu.getMenuComponents();
         }
-        else if (c instanceof Container) {
-            children = ((Container) c).getComponents();
+        else if (c instanceof Container container) {
+            children = container.getComponents();
         }
 
         if (children != null) {
@@ -1839,11 +1740,11 @@ public class JideSwingUtilities implements SwingConstants {
     }
 
     public static int getOrientationOf(Component component) {
-        if (component instanceof Alignable) {
-            return ((Alignable) component).getOrientation();
+        if (component instanceof Alignable alignable) {
+            return alignable.getOrientation();
         }
-        else if (component instanceof JComponent) {
-            Integer value = (Integer) ((JComponent) component).getClientProperty(Alignable.PROPERTY_ORIENTATION);
+        else if (component instanceof JComponent jComponent) {
+            Integer value = (Integer) jComponent.getClientProperty(Alignable.PROPERTY_ORIENTATION);
             if (value != null)
                 return value;
         }
@@ -1853,11 +1754,11 @@ public class JideSwingUtilities implements SwingConstants {
     public static void setOrientationOf(Component component, int orientation) {
         int old = getOrientationOf(component);
         if (orientation != old) {
-            if (component instanceof Alignable) {
-                ((Alignable) component).setOrientation(orientation);
+            if (component instanceof Alignable alignable) {
+                alignable.setOrientation(orientation);
             }
-            else if (component instanceof JComponent) {
-                ((JComponent) component).putClientProperty(Alignable.PROPERTY_ORIENTATION, orientation);
+            else if (component instanceof JComponent jComponent) {
+                jComponent.putClientProperty(Alignable.PROPERTY_ORIENTATION, orientation);
             }
         }
     }
@@ -1878,7 +1779,7 @@ public class JideSwingUtilities implements SwingConstants {
      * @return the map that contains all components that were double buffered.
      */
     public static Map<Component, Boolean> disableDoubleBuffered(final Component c) {
-        final Map<Component, Boolean> map = new HashMap<Component, Boolean>();
+        final Map<Component, Boolean> map = new HashMap<>();
         if (c instanceof JComponent) {
             JideSwingUtilities.setRecursively(c, new JideSwingUtilities.Handler() {
                 public boolean condition(Component c) {
@@ -1907,7 +1808,7 @@ public class JideSwingUtilities implements SwingConstants {
      * @return the map that contains all components that weren't double buffered.
      */
     public static Map<Component, Boolean> enableDoubleBuffered(final Component c) {
-        final Map<Component, Boolean> map = new HashMap<Component, Boolean>();
+        final Map<Component, Boolean> map = new HashMap<>();
         if (c instanceof JComponent) {
             JideSwingUtilities.setRecursively(c, new JideSwingUtilities.Handler() {
                 public boolean condition(Component c) {
@@ -1974,31 +1875,6 @@ public class JideSwingUtilities implements SwingConstants {
     /**
      * Returns whether or not text should be drawn anti-aliased.
      *
-     * @param c JComponent to test.
-     * @return Whether or not text should be drawn anti-aliased for the specified component.
-     */
-    private static boolean drawTextAntialiased(Component c) {
-        if (!AA_TEXT_DEFINED) {
-            if (c != null) {
-                // Check if the component wants aa text
-                if (c instanceof JComponent) {
-                    Boolean aaProperty = (Boolean) ((JComponent) c).getClientProperty(AA_TEXT_PROPERTY_KEY);
-                    return aaProperty != null ? aaProperty : false;
-                }
-                else {
-                    return false;
-                }
-            }
-            // No component, assume aa is off
-            return false;
-        }
-        // 'swing.aatext' was defined, use its value.
-        return AA_TEXT;
-    }
-
-    /**
-     * Returns whether or not text should be drawn anti-aliased.
-     *
      * @param aaText Whether or not aa text has been turned on for the component.
      * @return Whether or not text should be drawn anti-aliased.
      */
@@ -2029,17 +1905,15 @@ public class JideSwingUtilities implements SwingConstants {
     static Map renderingHints = null;
 
     static {
-        if (SystemInfo.isJdk6Above()) {
-            Toolkit tk = Toolkit.getDefaultToolkit();
-            renderingHints = (Map) (tk.getDesktopProperty("awt.font.desktophints"));
-            tk.addPropertyChangeListener("awt.font.desktophints", new PropertyChangeListener() {
-                public void propertyChange(PropertyChangeEvent evt) {
-                    if (evt.getNewValue() instanceof RenderingHints) {
-                        renderingHints = (RenderingHints) evt.getNewValue();
-                    }
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        renderingHints = (Map) (tk.getDesktopProperty("awt.font.desktophints"));
+        tk.addPropertyChangeListener("awt.font.desktophints", new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (evt.getNewValue() instanceof RenderingHints hints) {
+                    renderingHints = hints;
                 }
-            });
-        }
+            }
+        });
     }
 
     /**
@@ -2073,39 +1947,20 @@ public class JideSwingUtilities implements SwingConstants {
     }
 
     public static void drawString(JComponent c, Graphics g, String text, int x, int y) {
-        if (SystemInfo.isJdk6Above()) {
-            Graphics2D g2d = (Graphics2D) g;
-            Map oldHints = null;
-            if (renderingHints != null) {
-                oldHints = getRenderingHints(g2d, renderingHints, null);
-                g2d.addRenderingHints(renderingHints);
-            }
-            g2d.drawString(text, x, y);
-            if (oldHints != null) {
-                g2d.addRenderingHints(oldHints);
-            }
+        Graphics2D g2d = (Graphics2D) g;
+        Map oldHints = null;
+        if (renderingHints != null) {
+            oldHints = getRenderingHints(g2d, renderingHints, null);
+            g2d.addRenderingHints(renderingHints);
         }
-        else {
-            // If we get here we're not printing
-            if (drawTextAntialiased(c) && (g instanceof Graphics2D)) {
-                Graphics2D g2 = (Graphics2D) g;
-                Object oldAAValue = g2.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
-                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-                g2.drawString(text, x, y);
-                g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, oldAAValue);
-            }
-            else {
-                g.drawString(text, x, y);
-            }
+        g2d.drawString(text, x, y);
+        if (oldHints != null) {
+            g2d.addRenderingHints(oldHints);
         }
     }
 
     /**
-     * Setups the graphics to draw text using anti-alias.
-     * <p/>
-     * Under JDK1.4 and JDK5, this method will use a system property "swing.aatext" to determine if anti-alias is used.
-     * Under JDK6, we will read the system setting. For example, on Windows XP, there is a check box to turn on clear
-     * type anti-alias. We will use the same settings.
+     * Sets up the graphics to draw text using the desktop rendering hints.
      *
      * @param c the component
      * @param g the Graphics instance
@@ -2114,18 +1969,9 @@ public class JideSwingUtilities implements SwingConstants {
      */
     public static Object setupAntialiasing(Component c, Graphics g) {
         Graphics2D g2d = (Graphics2D) g;
-        Object oldHints;
-        if (SystemInfo.isJdk6Above()) {
-            oldHints = getRenderingHints(g2d, renderingHints, null);
-            if (renderingHints != null) {
-                g2d.addRenderingHints(renderingHints);
-            }
-        }
-        else {
-            oldHints = g2d.getRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING);
-            if (drawTextAntialiased(c)) {
-                g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            }
+        Object oldHints = getRenderingHints(g2d, renderingHints, null);
+        if (renderingHints != null) {
+            g2d.addRenderingHints(renderingHints);
         }
         return oldHints;
     }
@@ -2139,13 +1985,8 @@ public class JideSwingUtilities implements SwingConstants {
      */
     public static void restoreAntialiasing(Component c, Graphics g, Object oldHints) {
         Graphics2D g2d = (Graphics2D) g;
-        if (SystemInfo.isJdk6Above()) {
-            if (oldHints instanceof RenderingHints) {
-                g2d.addRenderingHints((RenderingHints) oldHints);
-            }
-        }
-        else {
-            g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, oldHints);
+        if (oldHints instanceof RenderingHints hints) {
+            g2d.addRenderingHints(hints);
         }
     }
 
@@ -2297,146 +2138,25 @@ public class JideSwingUtilities implements SwingConstants {
         }
     }
 
-    private static Class<?> _radialGradientPaintClass;
-    private static Constructor<?> _radialGradientPaintConstructor1;
-    private static Constructor<?> _radialGradientPaintConstructor2;
-
     /**
-     * Gets the RadialGradientPaint. RadialGradientPaint is added after JDK6. If you are running JDK5 or before, you can
-     * include batik-awt-util.jar which also has a RadialGradientPaint class. This method will use reflection to
-     * determine if the RadialGradientPaint class is in the class path and use the one it can find.
+     * Gets a radial gradient paint.
      */
     public static Paint getRadialGradientPaint(Point2D point, float radius, float[] fractions, Color[] colors) {
-        Class<?> radialGradientPaintClass = null;
-        try {
-            if (SystemInfo.isJdk6Above()) {
-                radialGradientPaintClass = Class.forName("java.awt.RadialGradientPaint");
-            }
-            else {
-                radialGradientPaintClass = Class.forName("org.apache.batik.ext.awt.RadialGradientPaint");
-            }
-        }
-        catch (ClassNotFoundException e1) {
-            // ignore
-        }
-        if (radialGradientPaintClass != null) {
-            try {
-                if (_radialGradientPaintConstructor2 == null) {
-                    _radialGradientPaintConstructor2 = radialGradientPaintClass.getConstructor(new Class[]{Point2D.class, float.class, float[].class, Color[].class});
-                }
-                final Object radialGradientPaint = _radialGradientPaintConstructor2.newInstance(point, radius, fractions, colors);
-                return (Paint) radialGradientPaint;
-            }
-            catch (NoSuchMethodException e) {
-                // ignore
-            }
-            catch (InstantiationException e) {
-                // ignore
-            }
-            catch (IllegalAccessException e) {
-                // ignore
-            }
-            catch (InvocationTargetException e) {
-                // ignore
-            }
-        }
-
-        System.err.println("Warning - radial gradients are only supported in Java 6 and higher or use batik-aw-util.jar, using a plain color instead"); //$NON-NLS-1$
-        return colors[0];
+        return new RadialGradientPaint(point, radius, fractions, colors);
     }
 
     /**
-     * Gets the RadialGradientPaint. RadialGradientPaint is added after JDK6. If you are running JDK5 or before, you can
-     * include batik-awt-util.jar which also has a RadialGradientPaint class. This method will use reflection to
-     * determine if the RadialGradientPaint class is in the class path and use the one it can find.
+     * Gets a radial gradient paint.
      */
     public static Paint getRadialGradientPaint(float cx, float cy, float radius, float[] fractions, Color[] colors) {
-        if (_radialGradientPaintClass == null) {
-            try {
-                if (SystemInfo.isJdk6Above()) {
-                    _radialGradientPaintClass = Class.forName("java.awt.RadialGradientPaint");
-                }
-                else {
-                    _radialGradientPaintClass = Class.forName("org.apache.batik.ext.awt.RadialGradientPaint");
-                }
-            }
-            catch (ClassNotFoundException e1) {
-                // ignore
-            }
-        }
-        if (_radialGradientPaintClass != null) {
-            try {
-                if (_radialGradientPaintConstructor1 == null) {
-                    _radialGradientPaintConstructor1 = _radialGradientPaintClass.getConstructor(new Class[]{float.class, float.class, float.class, float[].class, Color[].class});
-                }
-                final Object radialGradientPaint = _radialGradientPaintConstructor1.newInstance(cx, cy, radius, fractions, colors);
-                return (Paint) radialGradientPaint;
-            }
-            catch (NoSuchMethodException e) {
-                // ignore
-            }
-            catch (InstantiationException e) {
-                // ignore
-            }
-            catch (IllegalAccessException e) {
-                // ignore
-            }
-            catch (InvocationTargetException e) {
-                // ignore
-            }
-        }
-
-        System.err.println("Warning - radial gradients are only supported in Java 6 and higher or use batik-aw-util.jar, using a plain color instead"); //$NON-NLS-1$
-        return colors[0];
+        return new RadialGradientPaint(cx, cy, radius, fractions, colors);
     }
 
-    private static Class<?> _linearGradientPaintClass;
-    private static Constructor<?> _linearGradientPaintConstructor1;
-    private static Constructor<?> _linearGradientPaintConstructor2;
-
     /**
-     * Gets the LinearGradientPaint. LinearGradientPaint is added after JDK6. If you are running JDK5 or before, you can
-     * include batik-awt-util.jar which also has a LinearGradientPaint class. This method will use reflection to
-     * determine if the LinearGradientPaint class is in the class path and use the one it can find.
+     * Gets a linear gradient paint.
      */
     public static Paint getLinearGradientPaint(float startX, float startY, float endX, float endY, float[] fractions, Color[] colors) {
-        if (_linearGradientPaintClass == null) {
-            try {
-                if (SystemInfo.isJdk6Above()) {
-                    _linearGradientPaintClass = Class.forName("java.awt.LinearGradientPaint");
-                }
-                else {
-                    _linearGradientPaintClass = Class.forName("org.apache.batik.ext.awt.LinearGradientPaint");
-                }
-            }
-            catch (ClassNotFoundException e1) {
-                // ignore
-            }
-        }
-        if (_linearGradientPaintClass != null) {
-            try {
-                if (_linearGradientPaintConstructor1 == null) {
-                    _linearGradientPaintConstructor1 = _linearGradientPaintClass.getConstructor(new Class[]{float.class, float.class, float.class, float.class, float[].class, Color[].class});
-                }
-                final Object linearGradientPaint = _linearGradientPaintConstructor1.newInstance(startX, startY, endX, endY, fractions, colors);
-                return (Paint) linearGradientPaint;
-            }
-            catch (NoSuchMethodException e) {
-                // ignore
-            }
-            catch (InstantiationException e) {
-                // ignore
-            }
-            catch (IllegalAccessException e) {
-                // ignore
-            }
-            catch (InvocationTargetException e) {
-                // ignore
-            }
-        }
-
-        System.err.println("Warning - linear gradients are only supported in Java 6 and higher or use batik-aw-util.jar, using a plain color instead"); //$NON-NLS-1$
-        return colors[0];
+        return new LinearGradientPaint(startX, startY, endX, endY, fractions, colors);
     }
 
     /**
@@ -2533,7 +2253,7 @@ public class JideSwingUtilities implements SwingConstants {
      * @param isVertical
      */
     public static void fillGradient(Graphics2D g2d, Shape s, Color startColor, Color endColor, boolean isVertical) {
-        if ("true".equals(SecurityUtils.getProperty("normalGradientPaint", "false"))) {
+        if ("true".equals(System.getProperty("normalGradientPaint", "false"))) {
             fillNormalGradient(g2d, s, startColor, endColor, isVertical);
         }
         else {
@@ -2557,7 +2277,7 @@ public class JideSwingUtilities implements SwingConstants {
     public static Window getTopModalDialog(Window w) {
         Window[] ws = w.getOwnedWindows();
         for (Window w1 : ws) {
-            if (w1.isVisible() && w1 instanceof Dialog && ((Dialog) w1).isModal()) {
+            if (w1.isVisible() && w1 instanceof Dialog dialog && dialog.isModal()) {
                 return (getTopModalDialog(w1));
             }
         }
@@ -2739,8 +2459,8 @@ public class JideSwingUtilities implements SwingConstants {
                 container.requestFocusInWindow();
                 return container;
             }
-            else if (comp1 instanceof Container) {
-                comp = findSomethingFocusable((Container) (comp1));
+            else if (comp1 instanceof Container childContainer) {
+                comp = findSomethingFocusable(childContainer);
                 if (comp != null) {
                     return comp;
                 }
@@ -2787,8 +2507,8 @@ public class JideSwingUtilities implements SwingConstants {
      * @param e
      */
     public static void throwException(Exception e) {
-        if (e instanceof RuntimeException) {
-            throw (RuntimeException) e;
+        if (e instanceof RuntimeException runtimeException) {
+            throw runtimeException;
         }
         else {
             throw new RuntimeException(e);
@@ -2805,11 +2525,11 @@ public class JideSwingUtilities implements SwingConstants {
     public static void throwInvocationTargetException(InvocationTargetException e) {
         // in most cases, target exception will be RuntimeException
         // but to be on safer side (it may be Error) we explicitly check it
-        if (e.getTargetException() instanceof RuntimeException) {
-            throw (RuntimeException) e.getTargetException();
+        if (e.getTargetException() instanceof RuntimeException runtimeException) {
+            throw runtimeException;
         }
-        else if (e.getTargetException() instanceof Error) {
-            throw (Error) e.getTargetException();
+        else if (e.getTargetException() instanceof Error error) {
+            throw error;
         }
         else {
             throw new RuntimeException(e.getTargetException());
@@ -2856,129 +2576,14 @@ public class JideSwingUtilities implements SwingConstants {
             if (c.isInstance(component)) {
                 return component;
             }
-            if (component instanceof Container) {
-                Component found = getDescendantOfClass(c, (Container) component);
+            if (component instanceof Container childContainer) {
+                Component found = getDescendantOfClass(c, childContainer);
                 if (found != null) {
                     return found;
                 }
             }
         }
         return null;
-    }
-
-    public static float getDefaultFontSize() {
-        // read the font size from system property.
-        String fontSize = SecurityUtils.getProperty("jide.fontSize", null);
-        float defaultFontSize = -1f;
-        try {
-            if (fontSize != null) {
-                defaultFontSize = Float.parseFloat(fontSize);
-            }
-        }
-        catch (NumberFormatException e) {
-            // ignore
-        }
-
-        return defaultFontSize;
-    }
-
-    public static Object getMenuFont(Toolkit toolkit, UIDefaults table) {
-        Object menuFont = null;
-        // read the font size from system property.
-        float defaultFontSize = getDefaultFontSize();
-
-        if (JideSwingUtilities.shouldUseSystemFont()) {
-            if (defaultFontSize == -1/* || SystemInfo.isCJKLocale()*/) {
-                menuFont = table.getFont("ToolBar.font");
-            }
-            else {
-                menuFont = new WindowsDesktopProperty("win.menu.font", table.getFont("ToolBar.font"), toolkit, defaultFontSize);
-            }
-        }
-        else {
-            Font font = table.getFont("ToolBar.font");
-            if (font == null) {
-                menuFont = SecurityUtils.createFontUIResource("Tahoma", Font.PLAIN, defaultFontSize != -1f ? (int) defaultFontSize : 11);
-            }
-            else {
-                menuFont = SecurityUtils.createFontUIResource(font.getFontName(), Font.PLAIN, defaultFontSize != -1f ? (int) defaultFontSize : font.getSize());
-            }
-        }
-
-        if (menuFont == null) {
-            return getControlFont(toolkit, table);
-        }
-        else {
-            return menuFont;
-        }
-    }
-
-    public static Object getControlFont(Toolkit toolkit, UIDefaults table, String defaultUIDefault) {
-        Object controlFont;
-        // read the font size from system property.
-        float defaultFontSize = getDefaultFontSize();
-
-        if (JideSwingUtilities.shouldUseSystemFont()) {
-            Font font = table.getFont(defaultUIDefault);
-            if (font == null) {
-                font = new Font("Tahoma", Font.PLAIN, 12); // use default font
-            }
-            if (defaultFontSize == -1/* || SystemInfo.isCJKLocale()*/) {
-                controlFont = font;
-            }
-            else {
-                controlFont = new WindowsDesktopProperty("win.defaultGUI.font", font, toolkit, defaultFontSize);
-            }
-        }
-        else {
-            Font font = table.getFont(defaultUIDefault);
-            if (font == null) {
-                controlFont = SecurityUtils.createFontUIResource("Tahoma", Font.PLAIN, defaultFontSize != -1f ? (int) defaultFontSize : 11);
-            }
-            else {
-                controlFont = defaultFontSize == -1f ? font : new WindowsDesktopProperty("win.defaultGUI.font", font, toolkit, defaultFontSize);
-            }
-        }
-
-        return controlFont;
-    }
-
-    public static Object getControlFont(Toolkit toolkit, UIDefaults table) {
-        return getControlFont(toolkit, table, "Label.font");
-    }
-
-    public static Object getBoldFont(Toolkit toolkit, UIDefaults table) {
-        if (SystemInfo.isCJKLocale()) {
-            return getControlFont(toolkit, table);
-        }
-        else {
-            Object boldFont;
-            // read the font size from system property.
-            float defaultFontSize = getDefaultFontSize();
-
-            if (JideSwingUtilities.shouldUseSystemFont()) {
-                Font font = table.getFont("Label.font");
-                if (font == null) {
-                    font = new Font("Tahoma", Font.PLAIN, 12); // use default font
-                }
-                if (defaultFontSize == -1) {
-                    boldFont = new FontUIResource(font.deriveFont(Font.BOLD));
-                }
-                else {
-                    boldFont = new WindowsDesktopProperty("win.defaultGUI.font", font, toolkit, defaultFontSize, Font.BOLD);
-                }
-            }
-            else {
-                Font font = table.getFont("Label.font");
-                if (font == null) {
-                    boldFont = SecurityUtils.createFontUIResource("Tahoma", Font.BOLD, defaultFontSize != -1f ? (int) defaultFontSize : 11);
-                }
-                else {
-                    boldFont = SecurityUtils.createFontUIResource(font.getFontName(), Font.BOLD, defaultFontSize != -1f ? (int) defaultFontSize : font.getSize());
-                }
-            }
-            return boldFont;
-        }
     }
 
     public static void drawShadow(Graphics g, Component c, int x, int y, int w, int h) {
@@ -3094,9 +2699,8 @@ public class JideSwingUtilities implements SwingConstants {
      */
     public static boolean compositeRequestFocus(Component component) {
         LOGGER_FOCUS.fine("compositeRequestFocus " + component);
-        if (component instanceof Container) {
+        if (component instanceof Container container) {
             LOGGER_FOCUS.fine("compositeRequestFocus " + "is container.");
-            Container container = (Container) component;
             if (container.isFocusCycleRoot()) {
                 LOGGER_FOCUS.fine("compositeRequestFocus " + "is focuscycleroot.");
                 FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
@@ -3142,7 +2746,7 @@ public class JideSwingUtilities implements SwingConstants {
     public static boolean isAncestorOfFocusOwner(Component component) {
         boolean hasFocus = false;
         Component focusOwner = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-        if (component == focusOwner || (component instanceof Container && ((Container) component).isAncestorOf(focusOwner))) {
+        if (component == focusOwner || (component instanceof Container container && container.isAncestorOf(focusOwner))) {
             hasFocus = true;
         }
         return hasFocus;
@@ -3626,13 +3230,13 @@ public class JideSwingUtilities implements SwingConstants {
      * @return the outermost JRootPane for Component c or {@code null}.
      */
     public static JRootPane getOutermostRootPane(Component c) {
-        if (c instanceof RootPaneContainer && c.getParent() == null) {
-            return ((RootPaneContainer) c).getRootPane();
+        if (c instanceof RootPaneContainer rootPaneContainer && c.getParent() == null) {
+            return rootPaneContainer.getRootPane();
         }
         JRootPane lastRootPane;
         for (; c != null; c = SwingUtilities.getRootPane(c)) {
-            if (c instanceof JRootPane) {
-                lastRootPane = (JRootPane) c;
+            if (c instanceof JRootPane rootPane) {
+                lastRootPane = rootPane;
                 if (c.getParent().getParent() == null) {
                     return lastRootPane;
                 }
@@ -3761,7 +3365,7 @@ public class JideSwingUtilities implements SwingConstants {
                 }
 
                 public void action(Component c) {
-                    if (c instanceof JComponent) ((JComponent) c).revalidate();
+                    if (c instanceof JComponent component) component.revalidate();
                     c.invalidate();
                 }
 
@@ -3812,10 +3416,8 @@ public class JideSwingUtilities implements SwingConstants {
 
 
     /**
-     * This method can be used to fix two JDK bugs. One is to fix the row height is wrong when the first element in the
-     * model is null or empty string. The second bug is only on JDK1.4.2 where the vertical scroll bar is shown even all
-     * rows are visible. To use it, you just need to override JList#getPreferredScrollableViewportSize and call this
-     * method.
+     * Fixes the row height when the first element in the model is null or an empty string. To use it, override
+     * JList#getPreferredScrollableViewportSize and call this method.
      * <pre><code>
      * public Dimension getPreferredScrollableViewportSize() {
      *    return JideSwingUtilities.adjustPreferredScrollableViewportSize(this, super.getPreferredScrollableViewportSize());
@@ -3851,14 +3453,7 @@ public class JideSwingUtilities implements SwingConstants {
                 }
             }
         }
-        if (SystemInfo.isJdk15Above()) {
-            return defaultViewportSize;
-        }
-        else {
-            // in JDK1.4.2, the vertical scroll bar is shown because of the wrong size is calculated.
-            defaultViewportSize.height++;
-            return defaultViewportSize;
-        }
+        return defaultViewportSize;
     }
 
     /**
@@ -3935,8 +3530,7 @@ public class JideSwingUtilities implements SwingConstants {
     }
 
     /**
-     * Sets the text component transparent. It will call setOpaque(false) and also set client property for certain L&Fs
-     * in case the L&F doesn't respect the opaque flag.
+     * Sets the text component transparent.
      *
      * @param component the text component to be set to transparent.
      * @deprecated replaced by {@link #setComponentTransparent(javax.swing.JComponent)}.
@@ -3947,20 +3541,12 @@ public class JideSwingUtilities implements SwingConstants {
     }
 
     /**
-     * Sets the text component transparent. It will call setOpaque(false) and also set client property for certain L&Fs
-     * in case the L&F doesn't respect the opaque flag.
+     * Sets the text component transparent.
      *
      * @param component the text component to be set to transparent.
      */
     public static void setComponentTransparent(JComponent component) {
         component.setOpaque(false);
-
-// add this for the Synthetica
-        component.putClientProperty("Synthetica.opaque", false);
-// add this for Nimbus to disable all the painting of a component in Nimbus
-        component.putClientProperty("Nimbus.Overrides.InheritDefaults", false);
-        component.putClientProperty("Nimbus.Overrides", new UIDefaults());
-
     }
 
     /**
@@ -4097,10 +3683,9 @@ public class JideSwingUtilities implements SwingConstants {
 
     private static class viewportSynchronizationChangeListener implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
-            if (!(e.getSource() instanceof JViewport)) {
+            if (!(e.getSource() instanceof JViewport masterViewport)) {
                 return;
             }
-            JViewport masterViewport = (JViewport) e.getSource();
             Object property = masterViewport.getClientProperty(JideScrollPane.CLIENT_PROPERTY_SLAVE_VIEWPORT);
             if (!(property instanceof Map)) {
                 return;
@@ -4111,10 +3696,10 @@ public class JideSwingUtilities implements SwingConstants {
                 return;
             }
             Map<JViewport, Integer> slaveViewportMap = (Map) property;
-            Map<JViewport, Integer> allViewportToSync = new HashMap<JViewport, Integer>();
+            Map<JViewport, Integer> allViewportToSync = new HashMap<>();
             allViewportToSync.putAll(slaveViewportMap);
             do {
-                Map<JViewport, Integer> viewportToAdd = new HashMap<JViewport, Integer>();
+                Map<JViewport, Integer> viewportToAdd = new HashMap<>();
                 for (JViewport slaveViewport : allViewportToSync.keySet()) {
                     Object slaveProperty = slaveViewport.getClientProperty(JideScrollPane.CLIENT_PROPERTY_SLAVE_VIEWPORT);
                     if (!(slaveProperty instanceof Map)) {
@@ -4157,18 +3742,20 @@ public class JideSwingUtilities implements SwingConstants {
     }
 
     /**
-     * Sets the Window opaque using AWTUtilities.setWindowOpaque on JDK6u10 and later.
+     * Sets whether the window background is opaque.
      *
      * @param window the Window
      * @param opaque true or false
      */
     public static void setWindowOpaque(Window window, boolean opaque) {
-        try {
-            Class<?> c = Class.forName("com.sun.awt.AWTUtilities");
-            Method m = c.getMethod("setWindowOpaque", Window.class, boolean.class);
-            m.invoke(null, window, opaque);
+        if (!opaque && !isWindowTranslucencySupported(
+                window, GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
+            return;
         }
-        catch (Exception e) {
+        try {
+            window.setBackground(getWindowBackground(window.getBackground(), opaque));
+        }
+        catch (IllegalArgumentException | IllegalComponentStateException | UnsupportedOperationException e) {
             // ignore
         }
     }
@@ -4180,12 +3767,13 @@ public class JideSwingUtilities implements SwingConstants {
      * @param opacity the opacity
      */
     public static void setWindowOpacity(Window window, float opacity) {
-        try {
-            Class<?> awtUtilitiesClass = Class.forName("com.sun.awt.AWTUtilities");
-            Method mSetWindowOpacity = awtUtilitiesClass.getMethod("setWindowOpacity", Window.class, float.class);
-            mSetWindowOpacity.invoke(null, window, opacity);
+        if (!isWindowTranslucencySupported(window, GraphicsDevice.WindowTranslucency.TRANSLUCENT)) {
+            return;
         }
-        catch (Exception ex) {
+        try {
+            window.setOpacity(opacity);
+        }
+        catch (IllegalArgumentException | IllegalComponentStateException | UnsupportedOperationException ex) {
             // ignore
         }
     }
@@ -4197,14 +3785,30 @@ public class JideSwingUtilities implements SwingConstants {
      * @param shape  the shape
      */
     public static void setWindowShape(Window window, Shape shape) {
-        try {
-            Class<?> c = Class.forName("com.sun.awt.AWTUtilities");
-            Method m = c.getMethod("setWindowShape", Window.class, Shape.class);
-            m.invoke(null, window, shape);
+        if (shape != null && !isWindowTranslucencySupported(
+                window, GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSPARENT)) {
+            return;
         }
-        catch (Exception e) {
+        try {
+            window.setShape(shape);
+        }
+        catch (IllegalArgumentException | IllegalComponentStateException | UnsupportedOperationException e) {
             // ignore
         }
+    }
+
+    static Color getWindowBackground(Color background, boolean opaque) {
+        if (background == null) {
+            return opaque ? null : new Color(0, 0, 0, 0);
+        }
+        return new Color(background.getRed(), background.getGreen(), background.getBlue(), opaque ? 255 : 0);
+    }
+
+    private static boolean isWindowTranslucencySupported(
+            Window window, GraphicsDevice.WindowTranslucency translucency) {
+        GraphicsConfiguration configuration = window.getGraphicsConfiguration();
+        return configuration != null
+                && configuration.getDevice().isWindowTranslucencySupported(translucency);
     }
 
     /**
@@ -4305,7 +3909,7 @@ public class JideSwingUtilities implements SwingConstants {
      * This does not necessarily return the FontMetrics from the Graphics.
      *
      * @param c    JComponent requesting FontMetrics, may be null
-     * @param c    Graphics Graphics
+     * @param g    Graphics context
      * @param font Font to get FontMetrics for
      */
     public static FontMetrics getFontMetrics(JComponent c, Graphics g,
@@ -4375,7 +3979,7 @@ public class JideSwingUtilities implements SwingConstants {
             if (field != null) {
                 field.setAccessible(true);
                 Object scaleValue = field.get(device);
-                if (scaleValue instanceof Integer && (Integer)scaleValue == 2) {
+                if (scaleValue instanceof Integer scale && scale == 2) {
                     cachedScaleFactor = 2d;
                 }
             }

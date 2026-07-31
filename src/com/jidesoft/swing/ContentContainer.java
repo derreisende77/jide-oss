@@ -16,8 +16,7 @@ import java.awt.*;
  * In JIDE Action Framework, <code>ContentContainer</code> is the area that contains all command bars. It is also the
  * largest area in the content pane of top level windows.
  * <p/>
- * <code>ContentContainer</code> uses BasicPainter to paint the background. For example, under Office 2003 L&F, it will
- * use gradient to paint the background.
+ * <code>ContentContainer</code> uses BasicPainter to paint its background.
  */
 public class ContentContainer extends JPanel {
     private ThemePainter _painter;

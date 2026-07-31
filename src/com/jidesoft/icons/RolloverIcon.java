@@ -20,7 +20,7 @@ import java.awt.geom.GeneralPath;
  */
 public class RolloverIcon implements Icon {
     /**
-     * All colors used by the default icons. You can change them to fit your L&F.
+     * All colors used by the default icons. You can change them to fit your look and feel.
      */
     public static Color COLOR_COLLAPSED_FILL_ROLLOVER = new Color(199, 235, 250);
     public static Color COLOR_COLLAPSED_FILL = Color.WHITE;

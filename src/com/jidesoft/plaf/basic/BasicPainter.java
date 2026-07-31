@@ -1,13 +1,8 @@
 package com.jidesoft.plaf.basic;
 
-import com.jidesoft.jdk.JdkSpecificClass;
-import com.jidesoft.plaf.LookAndFeelFactory;
 import com.jidesoft.plaf.UIDefaultsLookup;
-import com.jidesoft.plaf.XPUtils;
 import com.jidesoft.swing.*;
 import com.jidesoft.utils.ColorUtils;
-import com.jidesoft.utils.SecurityUtils;
-import com.jidesoft.utils.SystemInfo;
 
 import javax.swing.*;
 import javax.swing.plaf.ColorUIResource;
@@ -247,7 +242,7 @@ public class BasicPainter implements SwingConstants, ThemePainter {
         installDefaults();
         Color background = null;
 
-        Boolean highContrast = UIManager.getBoolean("Theme.highContrast");
+        boolean highContrast = UIManager.getBoolean("Theme.highContrast");
         if (highContrast) {
             background = c.getBackground();
             paintBackground(c, g, rect, state == STATE_DEFAULT || state == STATE_DISABLE ? null : _borderColor,
@@ -524,10 +519,10 @@ public class BasicPainter implements SwingConstants, ThemePainter {
         }
         rect = new Rectangle(x + 1, y + 1, w - 1, h - 1);
 
-        Boolean highContrast = UIManager.getBoolean("Theme.highContrast");
+        boolean highContrast = UIManager.getBoolean("Theme.highContrast");
         if (state == STATE_SELECTED) {
             g.setColor(UIDefaultsLookup.getColor("DockableFrame.activeTitleBorderColor"));
-            if ("true".equals(SecurityUtils.getProperty("shadingtheme", "false"))) {
+            if ("true".equals(System.getProperty("shadingtheme", "false"))) {
                 g.drawRoundRect(x, y, w, h, 2, 2);
             }
             else {
@@ -542,13 +537,13 @@ public class BasicPainter implements SwingConstants, ThemePainter {
             g.setColor(UIDefaultsLookup.getColor("DockableFrame.inactiveTitleBackground"));
             g.fillRect(rect.x, rect.y, rect.width, rect.height);
         }
-        if ("true".equals(SecurityUtils.getProperty("shadingtheme", "false"))) {
+        if ("true".equals(System.getProperty("shadingtheme", "false"))) {
             JideSwingUtilities.fillGradient(g, rect, SwingConstants.HORIZONTAL);
         }
     }
 
     public void paintCollapsiblePaneTitlePaneBackground(JComponent c, Graphics g, Rectangle rect, int orientation, int state) {
-        Boolean highContrast = UIManager.getBoolean("Theme.highContrast");
+        boolean highContrast = UIManager.getBoolean("Theme.highContrast");
         if (!(c.getBackground() instanceof UIResource)) {
             g.setColor(c.getBackground());
         }
@@ -631,24 +626,8 @@ public class BasicPainter implements SwingConstants, ThemePainter {
 
     public void paintTabAreaBackground(JComponent c, Graphics g, Rectangle rect, int orientation, int state) {
         if (c.isOpaque() && c instanceof JideTabbedPane) {
-            JideTabbedPane tabbedPane = (JideTabbedPane) c;
-            int tabShape = tabbedPane.getTabShape();
-            int colorTheme = tabbedPane.getColorTheme();
-            if (tabShape == JideTabbedPane.SHAPE_BOX) {
-                g.setColor(UIDefaultsLookup.getColor("control"));
-            }
-            else {
-                if (colorTheme == JideTabbedPane.COLOR_THEME_WIN2K) {
-                    g.setColor(UIDefaultsLookup.getColor("control"));
-
-                }
-                else if (colorTheme == JideTabbedPane.COLOR_THEME_VSNET) {
-                    g.setColor(UIDefaultsLookup.getColor("JideTabbedPane.tabAreaBackground"));
-                }
-                else {
-                    g.setColor(UIDefaultsLookup.getColor("control"));
-                }
-            }
+            Color background = UIDefaultsLookup.getColor("JideTabbedPane.tabAreaBackground");
+            g.setColor(background != null ? background : UIDefaultsLookup.getColor("control"));
             g.fillRect(rect.x, rect.y, rect.width, rect.height);
         }
     }
@@ -793,7 +772,7 @@ public class BasicPainter implements SwingConstants, ThemePainter {
         g.setColor(shadowColor);
         if (c.getComponentOrientation().isLeftToRight()) {
             g.fillRect(0, 0, defaultShadowWidth, rect.height);
-            if ("true".equals(SecurityUtils.getProperty("shadingtheme", "false"))) {
+            if ("true".equals(System.getProperty("shadingtheme", "false"))) {
                 JideSwingUtilities.fillSingleGradient(g, new Rectangle(rect.x, rect.y, defaultShadowWidth, rect.height), SwingConstants.EAST, 255);
             }
 
@@ -805,7 +784,7 @@ public class BasicPainter implements SwingConstants, ThemePainter {
         }
         else {
             g.fillRect(rect.x + rect.width, rect.y, defaultShadowWidth, rect.height);
-            if ("true".equals(SecurityUtils.getProperty("shadingtheme", "false"))) {
+            if ("true".equals(System.getProperty("shadingtheme", "false"))) {
                 JideSwingUtilities.fillSingleGradient(g, new Rectangle(rect.x + rect.width - defaultTextIconGap, rect.y, defaultShadowWidth, 2), SwingConstants.WEST, 255);
             }
 
@@ -842,8 +821,7 @@ public class BasicPainter implements SwingConstants, ThemePainter {
      * @return true to display the sort arrow on top. Otherwise false.
      */
     protected boolean shouldDisplayOnTop() {
-        return SystemInfo.isWindowsVistaAbove() &&
-                (LookAndFeelFactory.isWindowsLookAndFeel(UIManager.getLookAndFeel()) && !LookAndFeelFactory.isWindowsClassicLookAndFeel(UIManager.getLookAndFeel())) && XPUtils.isXPStyleOn();
+        return false;
     }
 
     public void fillBackground(JComponent c, Graphics g, Rectangle rect, int orientation, int state, Color color) {
@@ -920,10 +898,7 @@ public class BasicPainter implements SwingConstants, ThemePainter {
                         x = rect.x + textWidth + H_GAP + ARROW_TEXT_GAP;
                     }
                 }
-                if(JdkSpecificClass.isSynthIcon(sortIcon)) {
-                    JdkSpecificClass.paintTableHeaderIcon(c, sortIcon, g, x, y);
-                }
-                else sortIcon.paintIcon(c, g, x, y);
+                sortIcon.paintIcon(c, g, x, y);
             }
         }
         else {
@@ -941,10 +916,7 @@ public class BasicPainter implements SwingConstants, ThemePainter {
                         y = rect.y + yOffset;
                     }
                 }
-                if(JdkSpecificClass.isSynthIcon(sortIcon)) {
-                    JdkSpecificClass.paintTableHeaderIcon(c, sortIcon, g, x, y);
-                }
-                else sortIcon.paintIcon(c, g, x, y);
+                sortIcon.paintIcon(c, g, x, y);
             }
         }
     }

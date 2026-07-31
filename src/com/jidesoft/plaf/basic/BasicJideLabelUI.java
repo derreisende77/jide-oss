@@ -33,8 +33,11 @@ public class BasicJideLabelUI extends BasicLabelUI {
             return d;
         }
         else {
-            //noinspection SuspiciousNameCombination
-            return new Dimension(d.height, d.width); // swap width and height
+            Insets insets = c.getInsets();
+            int contentWidth = d.width - insets.left - insets.right;
+            int contentHeight = d.height - insets.top - insets.bottom;
+            return new Dimension(contentHeight + insets.left + insets.right,
+                    contentWidth + insets.top + insets.bottom);
         }
     }
 
@@ -70,8 +73,8 @@ public class BasicJideLabelUI extends BasicLabelUI {
         FontMetrics fm = c.getFontMetrics(c.getFont());
         paintViewInsets = c.getInsets(paintViewInsets);
 
-        paintViewR.x = paintViewInsets.left;
-        paintViewR.y = paintViewInsets.top;
+        paintViewR.x = clockwise ? paintViewInsets.top : paintViewInsets.bottom;
+        paintViewR.y = clockwise ? paintViewInsets.right : paintViewInsets.left;
 
         // Use inverted height & width
         paintViewR.height = c.getWidth() - (paintViewInsets.left + paintViewInsets.right);
@@ -121,10 +124,11 @@ public class BasicJideLabelUI extends BasicLabelUI {
 
     public void propertyChange(PropertyChangeEvent e) {
         super.propertyChange(e);
-        if (JideLabel.PROPERTY_ORIENTATION == e.getPropertyName()) {
+        if (JideLabel.PROPERTY_ORIENTATION.equals(e.getPropertyName())) {
             if (e.getSource() instanceof JLabel) {
                 JLabel label = (JLabel) e.getSource();
                 label.revalidate();
+                label.repaint();
             }
         }
         else if (JideLabel.PROPERTY_CLOCKWISE.equals(e.getPropertyName())) {

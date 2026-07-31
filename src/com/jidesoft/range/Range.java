@@ -62,7 +62,7 @@ public interface Range<T> {
 
     /**
      * Determines whether the supplied point lies within this range. For continuous ranges this is interpreted as a pair
-     * of inequalities on the supplied value (i.e., min <= x <= max), but for discrete ranges the
+     * of inequalities on the supplied value (i.e., {@code min <= x <= max}), but for discrete ranges the
      * <code>contains()</code> method is more like a set membership test.
      *
      * @param x

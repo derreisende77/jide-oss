@@ -8,24 +8,17 @@ package com.jidesoft.plaf.basic;
 
 import com.jidesoft.icons.IconsFactory;
 import com.jidesoft.plaf.JideButtonUI;
-import com.jidesoft.plaf.LookAndFeelFactory;
 import com.jidesoft.plaf.UIDefaultsLookup;
 import com.jidesoft.swing.ComponentStateSupport;
 import com.jidesoft.swing.JideButton;
 import com.jidesoft.swing.JideSwingUtilities;
-import com.jidesoft.utils.SecurityUtils;
 
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
-import javax.swing.plaf.InsetsUIResource;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicButtonListener;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
 import javax.swing.plaf.basic.BasicHTML;
-import javax.swing.plaf.synth.Region;
-import javax.swing.plaf.synth.SynthContext;
-import javax.swing.plaf.synth.SynthLookAndFeel;
-import javax.swing.plaf.synth.SynthStyle;
 import javax.swing.text.View;
 import java.awt.*;
 
@@ -293,7 +286,7 @@ public class BasicJideButtonUI extends JideButtonUI {
 
         paintIcon(b, g);
 
-        Boolean highContrast = UIManager.getBoolean("Theme.highContrast");
+        boolean highContrast = UIManager.getBoolean("Theme.highContrast");
         if (highContrast && JideSwingUtilities.getButtonState(b) == ThemePainter.STATE_PRESSED) {
             textRect.x += 1;
             textRect.y += 1;
@@ -318,7 +311,7 @@ public class BasicJideButtonUI extends JideButtonUI {
             if (icon != null) {
                 if (isFloatingIcon() && model.isEnabled()) {
                     if (model.isRollover() && !model.isPressed() && !model.isSelected()) {
-                        if (!"true".equals(SecurityUtils.getProperty("shadingtheme", "false")) && b instanceof JideButton && ((JideButton) b).getButtonStyle() == JideButton.TOOLBAR_STYLE) {
+                        if (!"true".equals(System.getProperty("shadingtheme", "false")) && b instanceof JideButton && ((JideButton) b).getButtonStyle() == JideButton.TOOLBAR_STYLE) {
                             if (icon instanceof ImageIcon) {
                                 ImageIcon shadow = IconsFactory.createGrayImage(((ImageIcon) icon).getImage());
                                 shadow.paintIcon(b, g, iconRect.x + 1, iconRect.y + 1);
@@ -539,7 +532,7 @@ public class BasicJideButtonUI extends JideButtonUI {
                 else {
                     if (paintBackground) {
                         getPainter().paintButtonBackground(b, g, rect, JideSwingUtilities.getOrientationOf(b), state);
-                        if ("true".equals(SecurityUtils.getProperty("shadingtheme", "false"))) {
+                        if ("true".equals(System.getProperty("shadingtheme", "false"))) {
                             JideSwingUtilities.fillGradient(g, rect, JideSwingUtilities.getOrientationOf(b));
                         }
                     }
@@ -748,7 +741,10 @@ public class BasicJideButtonUI extends JideButtonUI {
         Dimension d = getPreferredSize(c);
         View v = (View) c.getClientProperty(BasicHTML.propertyKey);
         if (v != null) {
-            d.width += v.getMaximumSpan(View.X_AXIS) - v.getPreferredSpan(View.X_AXIS);
+            if (JideSwingUtilities.getOrientationOf(c) == SwingConstants.HORIZONTAL)
+                d.width += v.getMaximumSpan(View.X_AXIS) - v.getPreferredSpan(View.X_AXIS);
+            else
+                d.height += v.getMaximumSpan(View.X_AXIS) - v.getPreferredSpan(View.X_AXIS);
         }
         return d;
     }
@@ -759,15 +755,7 @@ public class BasicJideButtonUI extends JideButtonUI {
 
     protected void updateMargin(AbstractButton b) {
         String pp = getPropertyPrefix();
-        if (LookAndFeelFactory.isLnfInUse(LookAndFeelFactory.SYNTH_LNF)) {
-            SynthStyle ss = SynthLookAndFeel.getStyle(b, Region.BUTTON);
-            SynthContext sc = new SynthContext(b, Region.BUTTON, ss, 0);
-            Insets insets = ss.getInsets(sc, new InsetsUIResource(0, 0, 0, 0));
-            if (insets != null) {
-                b.setMargin(insets);
-            }
-        }
-        else if (b.getMargin() == null || (b.getMargin() instanceof UIResource)) {
+        if (b.getMargin() == null || b.getMargin() instanceof UIResource) {
             if (shouldWrapText(b)) {
                 b.setMargin(UIDefaultsLookup.getInsets(pp + "margin.vertical"));
             }

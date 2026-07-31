@@ -532,8 +532,8 @@ public class JideTitledBorder extends AbstractBorder {
     /**
      * Returns the baseline.
      *
-     * @throws NullPointerException     {@inheritDoc}
-     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws NullPointerException     if {@code c} is {@code null}
+     * @throws IllegalArgumentException if {@code width} or {@code height} is negative
      * @see javax.swing.JComponent#getBaseline(int, int)
      * @since 1.6
      */
@@ -586,7 +586,7 @@ public class JideTitledBorder extends AbstractBorder {
      * Returns an enum indicating how the baseline of the border
      * changes as the size changes.
      *
-     * @throws NullPointerException {@inheritDoc}
+     * @throws NullPointerException if {@code c} is {@code null}
      * @see javax.swing.JComponent#getBaseline(int, int)
      * @since 1.6
      */

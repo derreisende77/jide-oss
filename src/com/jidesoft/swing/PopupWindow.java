@@ -23,7 +23,8 @@ import java.util.Vector;
  * <p/>
  * You can add another JPopupMenu or JComboxBox in this popup.
  * <p/>
- * This class is copied from http://forum.java.sun.com/thread.jsp?forum=57&thread=230866 with some minor modifications.
+ * This class was copied from the former Java Developer Connection forum thread
+ * {@code http://forum.java.sun.com/thread.jsp?forum=57&thread=230866} with some minor modifications.
  */
 public class PopupWindow {
 

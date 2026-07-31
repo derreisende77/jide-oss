@@ -75,7 +75,7 @@ public class SidePane extends JPanel implements SwingConstants, Accessible {
     }
 
     /**
-     * Returns the UI object which implements the L&F for this component.
+     * Returns the UI object which implements the look and feel for this component.
      *
      * @return a <code>TabbedPaneUI</code> object
      * @see #setUI
@@ -86,7 +86,7 @@ public class SidePane extends JPanel implements SwingConstants, Accessible {
     }
 
     /**
-     * Sets the UI object which implements the L&F for this component.
+     * Sets the UI object which implements the look and feel for this component.
      *
      * @param ui the new UI object
      * @see javax.swing.UIDefaults#getUI
@@ -111,7 +111,7 @@ public class SidePane extends JPanel implements SwingConstants, Accessible {
 
     /**
      * Returns the name of the UI class that implements the
-     * L&F for this component.
+     * look and feel for this component.
      *
      * @return the string "TabbedPaneUI"
      * @see javax.swing.JComponent#getUIClassID

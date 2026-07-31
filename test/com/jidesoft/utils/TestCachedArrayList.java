@@ -1,123 +1,55 @@
 package com.jidesoft.utils;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 
-public class TestCachedArrayList extends TestCase {
-    CachedArrayList cachedList;
-    ActiveCachedArrayList activeCachedList;
-    ArrayList list;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class TestCachedArrayList {
+    CachedArrayList<String> cachedList;
+    ActiveCachedArrayList<String> activeCachedList;
+    ArrayList<String> list;
     public static final int SIZE = 1000;
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        long before, after;
-
-        list = new ArrayList();
-        before = System.nanoTime();
+    @BeforeEach
+    void setUp() {
+        list = new ArrayList<>();
         for (int i = 0; i < SIZE; i++) {
             list.add(0, String.valueOf(i));
         }
-        after = System.nanoTime();
-        System.out.println("Creating ArrayList of length " + SIZE
-                + " took " + String.valueOf((after - before) / SIZE) + "ms");
 
-        cachedList = new CachedArrayList();
-//        cachedList.setLazyCaching(true);
-        before = System.nanoTime();
+        cachedList = new CachedArrayList<>();
         for (int i = 0; i < SIZE; i++) {
             cachedList.add(0, String.valueOf(i));
         }
-        after = System.nanoTime();
-        System.out.println("Creating CachedArrayList of length " + SIZE
-                + " took " + String.valueOf((after - before) / SIZE) + "ms");
 
-        activeCachedList = new ActiveCachedArrayList();
-//        activeCachedList.setLazy(true);
-        before = System.nanoTime();
+        activeCachedList = new ActiveCachedArrayList<>();
         for (int i = 0; i < SIZE; i++) {
             activeCachedList.add(0, String.valueOf(i));
         }
-        after = System.nanoTime();
-        System.out.println("Creating ActiveCachedArrayList of length " + SIZE
-                + " took " + String.valueOf((after - before) / SIZE) + "ms");
-
-        System.out.println();
     }
 
+    @Test
     public void testIndexOf() {
-        assertEquals(cachedList.indexOf(cachedList.get(SIZE - 1)), list.indexOf(list.get(SIZE - 1)));
-        assertEquals(cachedList.indexOf(cachedList.get(1)), list.indexOf(list.get(1)));
+        assertEquals(list.indexOf(list.get(SIZE - 1)), cachedList.indexOf(cachedList.get(SIZE - 1)));
+        assertEquals(list.indexOf(list.get(1)), cachedList.indexOf(cachedList.get(1)));
         cachedList.invalidateCache();
     }
 
-    public void testIndexOfPerformance() {
-        long before, after;
-
-        //
-
-        before = System.nanoTime();
+    @Test
+    public void cachedIndexesMatchArrayList() {
         for (int i = 0; i < SIZE; i++) {
-            list.indexOf("" + i);
+            assertEquals(list.indexOf(list.get(i)), cachedList.indexOf(cachedList.get(i)));
+            assertEquals(list.indexOf(list.get(i)), activeCachedList.indexOf(activeCachedList.get(i)));
         }
-        after = System.nanoTime();
-        System.out.println("1st Normal: indexof of length " + SIZE
-                + " took " + String.valueOf((after - before) / 1000000) + "ms");
-
-        before = System.nanoTime();
-//        cachedList.cacheAll();
-        for (int i = 0; i < SIZE; i++) {
-            cachedList.indexOf("" + i);
-        }
-        after = System.nanoTime();
-        System.out.println("1st Cached: indexof of length " + SIZE
-                + " took " + String.valueOf((after - before) / 1000000) + "ms");
-
-        before = System.nanoTime();
-//        activeCachedList.recache();
-        for (int i = 0; i < SIZE; i++) {
-            activeCachedList.indexOf("" + i);
-        }
-        after = System.nanoTime();
-        System.out.println("1st Active: indexof of length " + SIZE
-                + " took " + String.valueOf((after - before) / 1000000) + "ms");
-
-        //
-        System.out.println();
-
-
-        before = System.nanoTime();
-        for (int i = 0; i < SIZE; i++) {
-            list.indexOf("" + i);
-        }
-        after = System.nanoTime();
-        System.out.println("2nd Normal: indexOf ArrayList of length " + SIZE
-                + " took " + String.valueOf((after - before) / 1000000) + "ms");
-
-        before = System.nanoTime();
-        for (int i = 0; i < SIZE; i++) {
-            cachedList.indexOf("" + i);
-        }
-        after = System.nanoTime();
-        System.out.println("2nd Cached: indexOf ArrayList of length " + SIZE
-                + " took " + String.valueOf((after - before) / 1000000) + "ms");
         cachedList.invalidateCache();
-
-        before = System.nanoTime();
-        for (int i = 0; i < SIZE; i++) {
-            activeCachedList.indexOf("" + i);
-        }
-        after = System.nanoTime();
-        System.out.println("2nd Active: indexOf ArrayList of length " + SIZE
-                + " took " + String.valueOf((after - before) / 1000000) + "ms");
-
-        System.out.println();
     }
 
+    @Test
     public void testAddRemove() {
-        CachedArrayList<String> list = new CachedArrayList();
+        CachedArrayList<String> list = new CachedArrayList<>();
 
         list.setLazyCaching(false);
         list.add("1");
@@ -150,5 +82,23 @@ public class TestCachedArrayList extends TestCase {
 
         list.clear();
         assertEquals(0, list.size());
+    }
+
+    @Test
+    void cacheAllRetainsTheFirstIndexForDuplicateValues() {
+        CachedArrayList<String> arrayList = new CachedArrayList<>();
+        arrayList.add("first");
+        arrayList.add("duplicate");
+        arrayList.add("duplicate");
+        arrayList.cacheAll();
+
+        CachedVector<String> vector = new CachedVector<>();
+        vector.add("first");
+        vector.add("duplicate");
+        vector.add("duplicate");
+        vector.cacheAll();
+
+        assertEquals(1, arrayList.indexOf("duplicate"));
+        assertEquals(1, vector.indexOf("duplicate"));
     }
 }

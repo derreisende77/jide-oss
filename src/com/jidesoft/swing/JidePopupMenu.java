@@ -27,7 +27,12 @@ public class JidePopupMenu extends JPopupMenu implements Scrollable {
     private static final String uiClassID = "JidePopupMenuUI";
     private static final String uiClassIDAlternative = "PopupMenuUI";
 
-    private boolean _useLightWeightPopup;
+    public static final String PROPERTY_VISIBLE_MENU_ITEM_COUNT = "visibleMenuItemCount";
+
+    private static int _visiblePopupCount;
+    private static boolean _useLightWeightPopup;
+
+    private boolean _toolTipStateManaged;
 
     private int _visibleMenuItemCount;
 
@@ -113,8 +118,7 @@ public class JidePopupMenu extends JPopupMenu implements Scrollable {
         Dimension size = getPreferredSize();
         Dimension screenSize = PortingUtils.getLocalScreenSize(this);
         Container container = SwingUtilities.getAncestorOfClass(SimpleScrollPane.class, this);
-        if (container instanceof SimpleScrollPane) {
-            SimpleScrollPane scrollPane = (SimpleScrollPane) container;
+        if (container instanceof SimpleScrollPane scrollPane) {
             int height = screenSize.height;
             // limit it to the height determined by the visible menu item count
             if (getVisibleMenuItemCount() > 0) {
@@ -146,16 +150,43 @@ public class JidePopupMenu extends JPopupMenu implements Scrollable {
 
     private class ToolTipSwitchPopupMenuListener implements PopupMenuListener {
         public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-            _useLightWeightPopup = ToolTipManager.sharedInstance().isLightWeightPopupEnabled();
-            ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
+            disableLightWeightToolTips();
         }
 
         public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
-            ToolTipManager.sharedInstance().setLightWeightPopupEnabled(_useLightWeightPopup);
+            restoreLightWeightToolTips();
         }
 
         public void popupMenuCanceled(PopupMenuEvent e) {
-            ToolTipManager.sharedInstance().setLightWeightPopupEnabled(_useLightWeightPopup);
+            restoreLightWeightToolTips();
+        }
+    }
+
+    private void disableLightWeightToolTips() {
+        synchronized (JidePopupMenu.class) {
+            if (_toolTipStateManaged) {
+                return;
+            }
+            ToolTipManager manager = ToolTipManager.sharedInstance();
+            if (_visiblePopupCount == 0) {
+                _useLightWeightPopup = manager.isLightWeightPopupEnabled();
+            }
+            _visiblePopupCount++;
+            _toolTipStateManaged = true;
+            manager.setLightWeightPopupEnabled(false);
+        }
+    }
+
+    private void restoreLightWeightToolTips() {
+        synchronized (JidePopupMenu.class) {
+            if (!_toolTipStateManaged) {
+                return;
+            }
+            _toolTipStateManaged = false;
+            _visiblePopupCount--;
+            if (_visiblePopupCount == 0) {
+                ToolTipManager.sharedInstance().setLightWeightPopupEnabled(_useLightWeightPopup);
+            }
         }
     }
 
@@ -180,7 +211,7 @@ public class JidePopupMenu extends JPopupMenu implements Scrollable {
         if (_visibleMenuItemCount != visibleMenuItemCount) {
             int oldValue = _visibleMenuItemCount;
             _visibleMenuItemCount = visibleMenuItemCount;
-            firePropertyChange("visibleMenuCount", oldValue, visibleMenuItemCount);
+            firePropertyChange(PROPERTY_VISIBLE_MENU_ITEM_COUNT, oldValue, visibleMenuItemCount);
         }
     }
 

@@ -274,13 +274,13 @@ public class CategoryRange<T> extends AbstractRange<T> implements Iterable<Categ
     public void setMinimum(double value) {
         Double oldValue = this.minimum;
         this.minimum = value;
-        firePropertyChange(PROPERTY_MIN, oldValue, value);
+        firePropertyChange(PROPERTY_MIN, oldValue, this.minimum);
     }
 
     public void setMaximum(double value) {
         Double oldValue = this.maximum;
         this.maximum = value;
-        firePropertyChange(PROPERTY_MAX, oldValue, value);
+        firePropertyChange(PROPERTY_MAX, oldValue, this.maximum);
     }
 
     /**

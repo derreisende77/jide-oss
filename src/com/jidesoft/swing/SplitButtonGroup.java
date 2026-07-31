@@ -17,7 +17,7 @@ public class SplitButtonGroup extends ButtonGroup {
     /**
      * The current selection.
      */
-    ButtonModel selection = null;
+    private ButtonModel selection = null;
 
     /**
      * Creates a new <code>ButtonGroup</code>.
@@ -113,6 +113,34 @@ public class SplitButtonGroup extends ButtonGroup {
     @Override
     public boolean isSelected(ButtonModel m) {
         return (m == selection);
+    }
+
+    /**
+     * Returns the model of the selected button.
+     *
+     * @return the selected button model, or {@code null} if there is no selection
+     */
+    @Override
+    public ButtonModel getSelection() {
+        return selection;
+    }
+
+    /**
+     * Clears the current selection.
+     */
+    @Override
+    public void clearSelection() {
+        if (selection == null) {
+            return;
+        }
+        ButtonModel oldSelection = selection;
+        selection = null;
+        if (oldSelection instanceof SplitButtonModel) {
+            ((SplitButtonModel) oldSelection).setButtonSelected(false);
+        }
+        else {
+            oldSelection.setSelected(false);
+        }
     }
 
 }

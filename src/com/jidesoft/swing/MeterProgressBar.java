@@ -52,7 +52,7 @@ public class MeterProgressBar extends JProgressBar {
     }
 
     /**
-     * Returns a string that specifies the name of the l&f class that renders this component.
+     * Returns a string that specifies the name of the look and feel class that renders this component.
      *
      * @return String "MeterProgressBarUI"
      */

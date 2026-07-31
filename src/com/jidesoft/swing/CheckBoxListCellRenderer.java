@@ -10,6 +10,7 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Locale;
 
@@ -18,6 +19,7 @@ import java.util.Locale;
  * Renders an item in a list using JCheckBox.
  */
 public class CheckBoxListCellRenderer extends JPanel implements ListCellRenderer, Serializable {
+    @Serial
     private static final long serialVersionUID = 2003073492549917883L;
 
     /**
@@ -57,17 +59,16 @@ public class CheckBoxListCellRenderer extends JPanel implements ListCellRenderer
 
     @Override
     public String getToolTipText(MouseEvent event) {
-        if (_actualListRenderer instanceof JComponent) {
+        if (_actualListRenderer instanceof JComponent rendererComponent) {
             Point p = event.getPoint();
             p.translate(-_checkBox.getWidth(), 0);
-            MouseEvent newEvent = new MouseEvent(((JComponent) _actualListRenderer), event.getID(),
+            MouseEvent newEvent = new MouseEvent(rendererComponent, event.getID(),
                     event.getWhen(),
                     event.getModifiers(),
                     p.x, p.y, event.getClickCount(),
                     event.isPopupTrigger());
 
-            String tip = ((JComponent) _actualListRenderer).getToolTipText(
-                    newEvent);
+            String tip = rendererComponent.getToolTipText(newEvent);
 
             if (tip != null) {
                 return tip;
@@ -86,12 +87,12 @@ public class CheckBoxListCellRenderer extends JPanel implements ListCellRenderer
         setLocale(list.getLocale());
 
         Object actualValue;
-        if (list instanceof CheckBoxList) {
-            CheckBoxListSelectionModel selectionModel = ((CheckBoxList) list).getCheckBoxListSelectionModel();
+        if (list instanceof CheckBoxList checkBoxList) {
+            CheckBoxListSelectionModel selectionModel = checkBoxList.getCheckBoxListSelectionModel();
             if (selectionModel != null) {
                 boolean enabled = list.isEnabled()
-                        && ((CheckBoxList) list).isCheckBoxEnabled()
-                        && ((CheckBoxList) list).isCheckBoxEnabled(index);
+                        && checkBoxList.isCheckBoxEnabled()
+                        && checkBoxList.isCheckBoxEnabled(index);
                 if (!enabled && !isSelected) {
                     if (getBackground() != null) {
                         setForeground(getBackground().darker());
@@ -102,10 +103,10 @@ public class CheckBoxListCellRenderer extends JPanel implements ListCellRenderer
             }
             actualValue = value;
         }
-        else if (list instanceof CheckBoxListWithSelectable) {
-            if (value instanceof Selectable) {
-                _checkBox.setSelected(((Selectable) value).isSelected());
-                boolean enabled = list.isEnabled() && ((Selectable) value).isEnabled() && ((CheckBoxListWithSelectable) list).isCheckBoxEnabled();
+        else if (list instanceof CheckBoxListWithSelectable selectableList) {
+            if (value instanceof Selectable selectable) {
+                _checkBox.setSelected(selectable.isSelected());
+                boolean enabled = list.isEnabled() && selectable.isEnabled() && selectableList.isCheckBoxEnabled();
                 if (!enabled && !isSelected) {
                     setForeground(getBackground().darker());
                 }
@@ -119,8 +120,8 @@ public class CheckBoxListCellRenderer extends JPanel implements ListCellRenderer
                 _checkBox.setEnabled(enabled);
             }
 
-            if (value instanceof DefaultSelectable) {
-                actualValue = ((DefaultSelectable) value).getObject();
+            if (value instanceof DefaultSelectable defaultSelectable) {
+                actualValue = defaultSelectable.getObject();
             }
             else {
                 actualValue = value;
@@ -134,18 +135,18 @@ public class CheckBoxListCellRenderer extends JPanel implements ListCellRenderer
             JComponent listCellRendererComponent = (JComponent) _actualListRenderer.getListCellRendererComponent(list, actualValue, index, isSelected, cellHasFocus);
 
             // make sure the (All) is converted to the localized string.
-            if (listCellRendererComponent instanceof JLabel) {
-                String v = convertElementToString(getLocale(), ((JLabel) listCellRendererComponent).getText());
-                ((JLabel) listCellRendererComponent).setText(v);
+            if (listCellRendererComponent instanceof JLabel label) {
+                String v = convertElementToString(getLocale(), label.getText());
+                label.setText(v);
             }
 
-            if (list instanceof CheckBoxListWithSelectable) {
-                if (!((CheckBoxListWithSelectable) list).isCheckBoxVisible(index)) {
+            if (list instanceof CheckBoxListWithSelectable selectableList) {
+                if (!selectableList.isCheckBoxVisible(index)) {
                     return listCellRendererComponent;
                 }
             }
-            if (list instanceof CheckBoxList) {
-                if (!((CheckBoxList) list).isCheckBoxVisible(index)) {
+            if (list instanceof CheckBoxList checkBoxList) {
+                if (!checkBoxList.isCheckBoxVisible(index)) {
                     return listCellRendererComponent;
                 }
             }
@@ -199,8 +200,8 @@ public class CheckBoxListCellRenderer extends JPanel implements ListCellRenderer
      * @param value the value on the cell renderer.
      */
     protected void customizeDefaultCellRenderer(Object value) {
-        if (value instanceof Icon) {
-            _label.setIcon((Icon) value);
+        if (value instanceof Icon icon) {
+            _label.setIcon(icon);
             _label.setText("");
         }
         else {

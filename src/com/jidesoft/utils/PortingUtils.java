@@ -13,51 +13,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A class that keeps all 1.4/1.3 different stuff.
+ * Utilities for component configuration, screen bounds, and user feedback.
  */
-@SuppressWarnings({"UnusedDeclaration"})
 public class PortingUtils {
-    /**
-     * Gets current focused components. If 1.3, just uses event's source; 1.4, used keyboard focus manager to get the
-     * correct focused component.
-     *
-     * @param event the AWT event
-     * @return current focused component
-     */
-    public static Component getCurrentFocusComponent(AWTEvent event) {
-        return KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-    }
-
-    /**
-     * Gets frame's state. In 1.3, used getState; in 1.4, uses getExtendedState.
-     *
-     * @param frame the frame
-     * @return frame's state
-     */
-    public static int getFrameState(Frame frame) {
-        return frame.getExtendedState();
-    }
-
-    /**
-     * Sets frame's state. In 1.3, uses sets frame's state; in 1.4, uses gets frame's state.
-     *
-     * @param frame the frame
-     * @param state the state
-     */
-    public static void setFrameState(Frame frame, int state) {
-        frame.setExtendedState(state);
-    }
-
-    /**
-     * Gets mouse modifiers. If 1.3, uses getModifiers; 1.4, getModifiersEx.
-     *
-     * @param e the mouse event
-     * @return mouse modifiers
-     */
-    public static int getMouseModifiers(MouseEvent e) {
-        return e.getModifiersEx();
-    }
-
     /**
      * Makes sure the component won't receive the focus.
      *
@@ -258,87 +216,6 @@ public class PortingUtils {
     }
 
     /**
-     * If you use methods such as {@link #ensureOnScreen(java.awt.Rectangle)}, {@link
-     * #getContainingScreenBounds(java.awt.Rectangle, boolean)} or {@link #getScreenArea()} for the first time, it will
-     * take up to a few seconds to run because it needs to get device information. To avoid any slowness, you can call
-     * call this method in the class where you will use those three methods. This method will spawn a thread to retrieve
-     * device information thus it will return immediately. Hopefully, when you use the three methods, the thread is done
-     * so user will not notice any slowness.
-     *
-     * @deprecated Call GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()
-     */
-    @Deprecated
-    synchronized public static void initializeScreenArea() {
-        initializeScreenArea(Thread.NORM_PRIORITY);
-    }
-
-    /**
-     * Invalidate the screen area so that initializeScreenArea will discard the cache and recalculate the screen bounds. Only call this when
-     * you detect the screen display setting changed on the system.
-     *
-     * @deprecated Cache no longer used.
-     */
-    @Deprecated
-    synchronized public static void invalidateScreenArea() {
-    }
-
-    /**
-     * If you use methods such as {@link #ensureOnScreen(java.awt.Rectangle)}, {@link
-     * #getContainingScreenBounds(java.awt.Rectangle, boolean)} or {@link #getScreenArea()} for the first time, it will
-     * take up to a couple of seconds to run because it needs to get device information. To avoid any slowness, you can
-     * call {@link #initializeScreenArea()} method in the class where you will use those three methods. This method will
-     * spawn a thread to retrieve device information thus it will return immediately. Hopefully, when you use the three
-     * methods, the thread is done so user will not notice any slowness.
-     *
-     * @param priority as we will use a thread to calculate the screen area, you can use this parameter to control the
-     *                 priority of the thread. If you are waiting for the result before the next step, you should use
-     *                 normal priority (which is 5). If you just want to calculate when app starts, you can use a lower
-     *                 priority (such as 3). For example, AbstractComboBox needs screen size so that the popup doesn't
-     *                 go beyond the screen. So when AbstractComboBox is used, we will kick off the thread at priority
-     *                 3. If user clicks on the drop down after the thread finished, there will be no time delay.
-     * @deprecated Call GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()
-     */
-    @Deprecated
-    synchronized public static void initializeScreenArea(int priority) {
-        final Thread _initializationThread = new Thread() {
-            @Override
-            public void run() {
-                GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
-            }
-        };
-
-        _initializationThread.setPriority(priority);
-        if (INITIALIZE_SCREEN_AREA_USING_THREAD) {
-            _initializationThread.start();
-        } else {
-            _initializationThread.run();
-        }
-    }
-
-    /**
-     * @deprecated No longer used.
-     */
-    @Deprecated
-    public static boolean INITIALIZE_SCREEN_AREA_USING_THREAD = true;
-
-    /**
-     * @deprecated No longer used.
-     */
-    @Deprecated
-    public static boolean isInitializationThreadAlive() {
-        return false;
-    }
-
-    /**
-     * @deprecated No longer used.
-     */
-    @Deprecated
-    public static boolean isInitializationThreadStarted() {
-        return false;
-
-    }
-
-    /**
      * Ensures the rectangle is visible on the screen.
      *
      * @param invoker the invoking component
@@ -346,9 +223,9 @@ public class PortingUtils {
      * @return the modified bounds.
      */
     public static Rectangle ensureVisible(Component invoker, Rectangle bounds) {
-        Rectangle mainScreenBounds = PortingUtils.getLocalScreenBounds(); // this is fast. Only if it is outside this bounds, we try the more expensive one.
+        Rectangle mainScreenBounds = getLocalScreenBounds(); // this is fast. Only if it is outside this bounds, we try the more expensive one.
         if (!mainScreenBounds.contains(bounds.getLocation())) {
-            Rectangle screenBounds = PortingUtils.getScreenBounds(invoker, false);
+            Rectangle screenBounds = getScreenBounds(invoker, false);
             if (bounds.x > screenBounds.x + screenBounds.width || bounds.x < screenBounds.x) {
                 bounds.x = screenBounds.x;
             }
@@ -504,7 +381,7 @@ public class PortingUtils {
 
     private static Rectangle[] getScreens() {
         GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        List<Rectangle> screensList = new ArrayList<Rectangle>();
+        List<Rectangle> screensList = new ArrayList<>();
         GraphicsDevice[] screenDevices = environment.getScreenDevices();
         for (GraphicsDevice device : screenDevices) {
             GraphicsConfiguration configuration = device.getDefaultConfiguration();
@@ -516,7 +393,7 @@ public class PortingUtils {
 
     private static Insets[] getInsets() {
         GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        List<Insets> insetsList = new ArrayList<Insets>();
+        List<Insets> insetsList = new ArrayList<>();
         GraphicsDevice[] screenDevices = environment.getScreenDevices();
         for (GraphicsDevice device : screenDevices) {
             GraphicsConfiguration configuration = device.getDefaultConfiguration();
@@ -541,66 +418,10 @@ public class PortingUtils {
      * @param component the component that has the error or null if the error is not associated with any component.
      */
     public static void notifyUser(Component component) {
-        String beep = SecurityUtils.getProperty("jide.beepNotifyUser", "true");
+        String beep = System.getProperty("jide.beepNotifyUser", "true");
         if ("true".equals(beep)) {
             UIManager.getLookAndFeel().provideErrorFeedback(component);
         }
     }
 
-    /**
-     * Checks the prerequisite needed by JIDE demos. If the prerequisite doesn't meet, it will prompt a message box and
-     * exit.
-     */
-    public static void prerequisiteChecking() {
-        if (!SystemInfo.isJdk14Above()) {
-            PortingUtils.notifyUser();
-            JOptionPane.showMessageDialog(null, "J2SE 1.4 or above is required for this demo.", "JIDE Software, Inc.", JOptionPane.WARNING_MESSAGE);
-            java.lang.System.exit(0);
-        }
-
-        if (!SystemInfo.isJdk142Above()) {
-            PortingUtils.notifyUser();
-            JOptionPane.showMessageDialog(null, "J2SE 1.4.2 or above is recommended for this demo for the best experience of seamless integration with Windows XP.", "JIDE Software, Inc.", JOptionPane.WARNING_MESSAGE);
-        }
-
-        if (SystemInfo.isMacOSX()) { // set special properties for Mac OS X
-            java.lang.System.setProperty("apple.laf.useScreenMenuBar", "true");
-            System.setProperty("apple.awt.brushMetalLook", "true");
-        }
-    }
-
-    /**
-     * Sets the preferred size on a component. This method is there mainly to fix the issue that setPreferredSize method
-     * is there on Component only after JDK5. For JDK1.4 and before, you need to cast to JComponent first. So this
-     * method captures this logic and only call setPreferedSize when the JDK is 1.5 and above or when the component is
-     * instance of JComponent.
-     *
-     * @param component the component
-     * @param size      the preferred size.
-     */
-    public static void setPreferredSize(Component component, Dimension size) {
-        if (SystemInfo.isJdk15Above()) {
-            component.setPreferredSize(size);
-        } else if (component instanceof JComponent) {
-            //noinspection RedundantCast
-            ((JComponent) component).setPreferredSize(size);
-        }
-    }
-
-    /**
-     * Sets the minimum size on a component. This method is there mainly to fix the issue that setMinimumSize method is
-     * there on Component only after JDK5. For JDK1.4 and before, you need to cast to JComponent first. So this method
-     * captures this logic and only call setMinimumSize when the JDK is 1.5 and above or when the component is
-     *
-     * @param component the component
-     * @param size      the preferred size.
-     */
-    public static void setMinimumSize(Component component, Dimension size) {
-        if (SystemInfo.isJdk15Above()) {
-            component.setMinimumSize(size);
-        } else if (component instanceof JComponent) {
-            //noinspection RedundantCast
-            ((JComponent) component).setMinimumSize(size);
-        }
-    }
 }

@@ -12,15 +12,13 @@ import com.jidesoft.plaf.basic.BasicJideTabbedPaneUI;
 import com.jidesoft.popup.JidePopup;
 import com.jidesoft.utils.JideFocusTracker;
 import com.jidesoft.utils.PortingUtils;
-import com.jidesoft.utils.SystemInfo;
-
 import javax.swing.*;
 import javax.swing.plaf.TabbedPaneUI;
 import javax.swing.plaf.UIResource;
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.Serial;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
@@ -169,9 +167,9 @@ public class JideTabbedPane extends JTabbedPane {
     /**
      * The Set for the tab closable. If there is an entry in the Set, it means the tab is NOT closable.
      */
-    private Set<Object> _closableSet = new HashSet<Object>();
+    private Set<Object> _closableSet = new HashSet<>();
 
-    private Hashtable<Component, Object> _pageLastFocusTrackers = new Hashtable<Component, Object>();
+    private Hashtable<Component, Object> _pageLastFocusTrackers = new Hashtable<>();
 
     private Font _selectedTabFont;
 
@@ -209,7 +207,8 @@ public class JideTabbedPane extends JTabbedPane {
     private int _tabResizeMode = RESIZE_MODE_DEFAULT;
 
     /**
-     * color style
+     * Legacy color-theme constants retained for source compatibility. FlatLaf
+     * uses {@link #COLOR_THEME_DEFAULT}; other values are ignored.
      */
     public static final int COLOR_THEME_DEFAULT = 0;
     public static final int COLOR_THEME_WIN2K = 1;
@@ -220,7 +219,7 @@ public class JideTabbedPane extends JTabbedPane {
     // color style
     private int _colorTheme = COLOR_THEME_DEFAULT;
 
-    // tab shape
+    // Legacy shape constants are retained for source compatibility. FlatLaf uses SHAPE_BOX.
     public static final int SHAPE_DEFAULT = 0;
     public static final int SHAPE_WINDOWS = 1;
     public static final int SHAPE_VSNET = 2;
@@ -297,7 +296,7 @@ public class JideTabbedPane extends JTabbedPane {
     }
 
     /**
-     * Returns the UI object which implements the L&F for this component.
+     * Returns the UI object which implements the look and feel for this component.
      *
      * @return a <code>TabbedPaneUI</code> object
      * @see #setUI
@@ -308,7 +307,7 @@ public class JideTabbedPane extends JTabbedPane {
     }
 
     /**
-     * Sets the UI object which implements the L&F for this component.
+     * Sets the UI object which implements the look and feel for this component.
      *
      * @param ui the new UI object
      * @see UIDefaults#getUI
@@ -333,7 +332,7 @@ public class JideTabbedPane extends JTabbedPane {
 
 
     /**
-     * Returns the name of the UI class that implements the L&F for this component.
+     * Returns the name of the UI class that implements the look and feel for this component.
      *
      * @return the string "TabbedPaneUI"
      * @see JComponent#getUIClassID
@@ -517,15 +516,15 @@ public class JideTabbedPane extends JTabbedPane {
             }
         }
 
-        boolean contains = false;
-        if (_closableSet.contains(oldComponent)) {
-            contains = true;
-        }
+        boolean nonClosable = _closableSet.remove(oldComponent);
 
         super.setComponentAt(index, c);
 
-        if (contains) {
+        if (nonClosable) {
             _closableSet.add(c);
+        }
+        if (c != null) {
+            _pageLastFocusTrackers.put(c, new PageLastFocusTracker(c));
         }
 
         if (!isAutoFocusOnTabHideClose())
@@ -560,6 +559,9 @@ public class JideTabbedPane extends JTabbedPane {
         }
         if (tabIndex == -1 || selectedIndex == -1)
             return;
+        if (tabIndex < 0 || tabIndex >= getTabCount()) {
+            throw new IndexOutOfBoundsException("Index: " + tabIndex + ", Tab count: " + getTabCount());
+        }
 
         if (isTabEditing())
             stopTabEditing();
@@ -582,23 +584,12 @@ public class JideTabbedPane extends JTabbedPane {
             setAutoRequestFocus(false);
 
             if (selectedIndex - tabIndex == 1 || tabIndex - selectedIndex == 1) {
-                Component c = getComponentAt(tabIndex);
-                String title = getTitleAt(tabIndex);
-                String tooltip = getToolTipTextAt(tabIndex);
-                Icon icon = getIconAt(tabIndex);
                 _suppressSetSelectedIndex = true;
-                boolean closable = true;
-                if (_closableSet != null) {
-                    closable = isTabClosableAt(tabIndex);
-                }
                 try {
                     if (tabIndex > selectedIndex)
-                        insertTab(title, icon, c, tooltip, selectedIndex);
+                        moveTabAt(tabIndex, selectedIndex);
                     else {
-                        insertTab(title, icon, c, tooltip, selectedIndex + 1);
-                    }
-                    if (!closable) {
-                        _closableSet.add(c);
+                        moveTabAt(tabIndex, selectedIndex + 1);
                     }
                 }
                 finally {
@@ -606,23 +597,12 @@ public class JideTabbedPane extends JTabbedPane {
                 }
             }
             else {
-                Component c = getComponentAt(selectedIndex);
-                String title = getTitleAt(selectedIndex);
-                String tooltip = getToolTipTextAt(selectedIndex);
-                Icon icon = getIconAt(selectedIndex);
                 _suppressSetSelectedIndex = true;
-                boolean closable = true;
-                if (_closableSet != null) {
-                    closable = isTabClosableAt(tabIndex);
-                }
                 try {
                     if (tabIndex > selectedIndex)
-                        insertTab(title, icon, c, tooltip, tabIndex + 1);
+                        moveTabAt(selectedIndex, tabIndex + 1);
                     else {
-                        insertTab(title, icon, c, tooltip, tabIndex);
-                    }
-                    if (!closable) {
-                        _closableSet.add(c);
+                        moveTabAt(selectedIndex, tabIndex);
                     }
                 }
                 finally {
@@ -630,17 +610,10 @@ public class JideTabbedPane extends JTabbedPane {
                 }
             }
 
-            if (!SystemInfo.isJdk15Above()) {
-                // a workaround for Swing bug
-                if (tabIndex == getTabCount() - 2) {
-                    setSelectedIndex(getTabCount() - 1);
-                }
-            }
-
-            setAutoRequestFocus(old);
             setSelectedIndex(tabIndex);
         }
         finally {
+            setAutoRequestFocus(old);
             _suppressStateChangedEvents = false;
 
             if (shouldChangeFocus) {
@@ -649,6 +622,47 @@ public class JideTabbedPane extends JTabbedPane {
                     requestFocusInWindow();
                 }
             }
+        }
+    }
+
+    private void moveTabAt(int sourceIndex, int insertionIndex) {
+        Component component = getComponentAt(sourceIndex);
+        String title = getTitleAt(sourceIndex);
+        String tooltip = getToolTipTextAt(sourceIndex);
+        Icon icon = getIconAt(sourceIndex);
+        Icon disabledIcon = getDisabledIconAt(sourceIndex);
+        boolean enabled = isEnabledAt(sourceIndex);
+        int mnemonic = getMnemonicAt(sourceIndex);
+        int displayedMnemonicIndex = getDisplayedMnemonicIndexAt(sourceIndex);
+        Color foreground = getForegroundAt(sourceIndex);
+        Color background = getBackgroundAt(sourceIndex);
+        boolean customForeground = foreground != getForeground();
+        boolean customBackground = background != getBackground();
+        Component tabComponent = getTabComponentAt(sourceIndex);
+        boolean closable = isTabClosableAt(sourceIndex);
+
+        insertTab(title, icon, component, tooltip, insertionIndex);
+
+        int movedIndex = indexOfComponent(component);
+        setDisabledIconAt(movedIndex, disabledIcon);
+        setEnabledAt(movedIndex, enabled);
+        if (mnemonic != -1) {
+            setMnemonicAt(movedIndex, mnemonic);
+        }
+        if (displayedMnemonicIndex != -1) {
+            setDisplayedMnemonicIndexAt(movedIndex, displayedMnemonicIndex);
+        }
+        if (customForeground) {
+            setForegroundAt(movedIndex, foreground);
+        }
+        if (customBackground) {
+            setBackgroundAt(movedIndex, background);
+        }
+        if (tabComponent != null) {
+            setTabComponentAt(movedIndex, tabComponent);
+        }
+        if (!closable) {
+            _closableSet.add(component);
         }
     }
 
@@ -734,6 +748,7 @@ public class JideTabbedPane extends JTabbedPane {
       */
 
     protected class IgnoreableSingleSelectionModel extends DefaultSingleSelectionModel {
+        @Serial
         private static final long serialVersionUID = -4321082126384337792L;
 
         @Override
@@ -836,7 +851,7 @@ public class JideTabbedPane extends JTabbedPane {
     /**
      * If the return is true, the value set to setShowIconsOnTab() will be ignored.
      *
-     * @return if use default value from UIDefaults in L&F.
+     * @return if use default value from UIDefaults in look and feel.
      */
     public boolean isUseDefaultShowIconsOnTab() {
         return _useDefaultShowIconsOnTab;
@@ -886,7 +901,7 @@ public class JideTabbedPane extends JTabbedPane {
     /**
      * If the return is true, the value set to setShowCloseButtonOnTab() will be ignored.
      *
-     * @return if use default value from UIDefaults in L&F.
+     * @return if use default value from UIDefaults in look and feel.
      */
     public boolean isUseDefaultShowCloseButtonOnTab() {
         return _useDefaultShowCloseButtonOnTab;
@@ -1066,15 +1081,6 @@ public class JideTabbedPane extends JTabbedPane {
 
     @Override
     public void removeTabAt(int index) {
-        int tabCount = getTabCount();
-        int selected = getSelectedIndex();
-        boolean enforce = false;
-        if (selected == index && selected < tabCount - 1) {
-            // since JDK5 fixed this, we only need to enforce the event when it is not JDK5 and above.
-            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6368047
-            enforce = !SystemInfo.isJdk15Above();
-        }
-
         Component c = getComponentAt(index);
         boolean contains = false;
         if (_closableSet.contains(c)) {
@@ -1096,24 +1102,14 @@ public class JideTabbedPane extends JTabbedPane {
             }
         }
 
-        if (getUI() instanceof BasicJideTabbedPaneUI) {
-            ((BasicJideTabbedPaneUI) getUI()).ensureActiveTabIsVisible(true);
+        if (getUI() instanceof BasicJideTabbedPaneUI tabbedPaneUI) {
+            tabbedPaneUI.ensureActiveTabIsVisible(true);
             if (isAutoFocusOnTabHideClose() && hasFocusComponent()) {
-                ((BasicJideTabbedPaneUI) getUI()).requestFocusForVisibleComponent();
+                tabbedPaneUI.requestFocusForVisibleComponent();
             }
         }
 
         super.removeTabAt(index);
-
-        // We need to fire events
-        if (enforce) {
-            try {
-                fireStateChanged();
-            }
-            catch (Throwable th) {
-                th.printStackTrace();
-            }
-        }
     }
 
     /**
@@ -1124,7 +1120,7 @@ public class JideTabbedPane extends JTabbedPane {
      *
      * @param tabIndex the tab index
      * @return the flag.
-     * @throws IndexOutOfBoundsException if index is out of range (index < 0 || index >= tab count)
+     * @throws IndexOutOfBoundsException if {@code tabIndex < 0 || tabIndex >= getTabCount()}
      */
     public boolean isTabClosableAt(int tabIndex) {
         return !_closableSet.contains(getComponentAt(tabIndex));
@@ -1140,7 +1136,7 @@ public class JideTabbedPane extends JTabbedPane {
      *
      * @param tabIndex the tab index
      * @param closable the flag indicating if the tab is closable
-     * @throws IndexOutOfBoundsException if index is out of range (index < 0 || index >= tab count)
+     * @throws IndexOutOfBoundsException if {@code tabIndex < 0 || tabIndex >= getTabCount()}
      */
     public void setTabClosableAt(int tabIndex, boolean closable) {
         if (closable) {
@@ -1198,21 +1194,6 @@ public class JideTabbedPane extends JTabbedPane {
     }
 
     protected void clearVisComp() {
-        // this is done so that the super removetab and fireselection do not attempt to manage focus
-        // A very dirty hack to access a private variable is jtabpane. Note - this only works on 1.6
-        if(SystemInfo.isJdk6Above()) {
-            return;
-        }
-        try {
-            java.lang.reflect.Field field = JTabbedPane.class.getDeclaredField("visComp");
-            // set accessible true
-            field.setAccessible(true);
-            field.set(this, null);
-//			superVisComp = (Component) field.get(this);
-        }
-        catch (Exception e) {
-            // null
-        }
     }
 
     /**
@@ -1297,23 +1278,18 @@ public class JideTabbedPane extends JTabbedPane {
     }
 
     public int getColorTheme() {
-        if (_colorTheme == COLOR_THEME_DEFAULT) {
-            return getDefaultColorTheme();
-        }
-        else {
-            return _colorTheme;
-        }
+        return COLOR_THEME_DEFAULT;
     }
 
     public int getDefaultColorTheme() {
-        return UIDefaultsLookup.getInt("JideTabbedPane.defaultTabColorTheme");
+        return COLOR_THEME_DEFAULT;
     }
 
     public void setColorTheme(int colorTheme) {
         int old = _colorTheme;
-        if (old != colorTheme) {
-            _colorTheme = colorTheme;
-            firePropertyChange(PROPERTY_COLOR_THEME, old, colorTheme);
+        if (old != COLOR_THEME_DEFAULT) {
+            _colorTheme = COLOR_THEME_DEFAULT;
+            firePropertyChange(PROPERTY_COLOR_THEME, old, COLOR_THEME_DEFAULT);
         }
     }
 
@@ -1346,22 +1322,17 @@ public class JideTabbedPane extends JTabbedPane {
 
 
     public int getTabShape() {
-        if (_tabShape == SHAPE_DEFAULT) {
-            return getDefaultTabStyle();
-        }
-        else {
-            return _tabShape;
-        }
+        return SHAPE_BOX;
     }
 
     public int getDefaultTabStyle() {
-        return UIDefaultsLookup.getInt("JideTabbedPane.defaultTabShape");
+        return SHAPE_BOX;
     }
 
     public void setTabShape(int tabShape) {
         int old = _tabShape;
-        if (old != tabShape) {
-            _tabShape = tabShape;
+        if (old != SHAPE_BOX) {
+            _tabShape = SHAPE_BOX;
             firePropertyChange(PROPERTY_TAB_SHAPE, old, _tabShape);
         }
     }
@@ -1606,20 +1577,17 @@ public class JideTabbedPane extends JTabbedPane {
     protected PropertyChangeListener _focusChangeListener;
 
     protected PropertyChangeListener createFocusChangeListener() {
-        return new PropertyChangeListener() {
-            public void propertyChange(PropertyChangeEvent evt) {
-                final boolean hadFocus = JideTabbedPane.this.isAncestorOf((Component) evt.getOldValue()) || JideTabbedPane.this == evt.getOldValue();
-                boolean hasFocus = JideTabbedPane.this == evt.getNewValue() || JideTabbedPane.this.hasFocusComponent();
-                if (hasFocus != hadFocus) {
-                    repaintTabAreaAndContentBorder();
-                }
+        return evt -> {
+            final boolean hadFocus = JideTabbedPane.this.isAncestorOf((Component) evt.getOldValue()) || JideTabbedPane.this == evt.getOldValue();
+            boolean hasFocus = JideTabbedPane.this == evt.getNewValue() || JideTabbedPane.this.hasFocusComponent();
+            if (hasFocus != hadFocus) {
+                repaintTabAreaAndContentBorder();
             }
         };
     }
 
     /**
-     * Repaints the tab area and the content border if any. This is mainly for the focus border in JideTabbedPane
-     * Office2003 and Eclipse3x style.
+     * Repaints the tab area and the content border if any.
      */
     public void repaintTabAreaAndContentBorder() {
         int delay = 200;
@@ -1635,18 +1603,12 @@ public class JideTabbedPane extends JTabbedPane {
             Insets insets = new Insets(0, 0, 0, 0);
             BasicJideTabbedPaneUI.rotateInsets(contentinsets, insets, tabPlacement);
             switch (getTabPlacement()) {
-                case TOP:
-                    insets.top += getTabHeight();
-                    break;
-                case BOTTOM:
-                    insets.bottom += getTabHeight();
-                    break;
-                case LEFT:
-                    insets.left += getTabHeight();
-                    break;
-                case RIGHT:
-                    insets.right += getTabHeight();
-                    break;
+                case TOP -> insets.top += getTabHeight();
+                case BOTTOM -> insets.bottom += getTabHeight();
+                case LEFT -> insets.left += getTabHeight();
+                case RIGHT -> insets.right += getTabHeight();
+                default -> {
+                }
             }
             if (insets.top != 0) {
                 repaintContentBorder(0, 0, getWidth(), insets.top);
@@ -1716,8 +1678,7 @@ public class JideTabbedPane extends JTabbedPane {
     public static class TabListCellRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            if (value instanceof JideTabbedPane) {
-                JideTabbedPane tabbedPane = (JideTabbedPane) value;
+            if (value instanceof JideTabbedPane tabbedPane) {
                 if(tabbedPane.getTabCount() == 0 || tabbedPane.getTabCount() <= index) {
                     return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 }
@@ -1781,8 +1742,7 @@ public class JideTabbedPane extends JTabbedPane {
     }
 
     /**
-     * Checks if the JideTabbedPane has the focus component. If true, in some styles such as Office2003 style, we will
-     * paint a background on the insets to indicate the tabbed pane has focus.
+     * Checks if the JideTabbedPane has the focus component.
      *
      * @return true if the JideTabbedPane has the focus component. Otherwise false.
      */
@@ -1911,15 +1871,14 @@ public class JideTabbedPane extends JTabbedPane {
     protected void fireTabEditing(int id, int index, String oldTitle, String newTitle) {
         if (LOGGER_EVENT.isLoggable(Level.FINE)) {
             switch (id) {
-                case TabEditingEvent.TAB_EDITING_STARTED:
-                    LOGGER_EVENT.fine("TabEditing Started at tab \"" + index + "\"; the current title is " + oldTitle);
-                    break;
-                case TabEditingEvent.TAB_EDITING_STOPPED:
-                    LOGGER_EVENT.fine("TabEditing Stopped at tab \"" + index + "\"; the old title is " + oldTitle + "; the new title is " + newTitle);
-                    break;
-                case TabEditingEvent.TAB_EDITING_CANCELLED:
-                    LOGGER_EVENT.fine("TabEditing Cancelled at tab \"" + index + "\"; the current title remains " + oldTitle);
-                    break;
+                case TabEditingEvent.TAB_EDITING_STARTED ->
+                        LOGGER_EVENT.fine("TabEditing Started at tab \"" + index + "\"; the current title is " + oldTitle);
+                case TabEditingEvent.TAB_EDITING_STOPPED ->
+                        LOGGER_EVENT.fine("TabEditing Stopped at tab \"" + index + "\"; the old title is " + oldTitle + "; the new title is " + newTitle);
+                case TabEditingEvent.TAB_EDITING_CANCELLED ->
+                        LOGGER_EVENT.fine("TabEditing Cancelled at tab \"" + index + "\"; the current title remains " + oldTitle);
+                default -> {
+                }
             }
         }
         Object[] listeners = listenerList.getListenerList();
@@ -2234,17 +2193,12 @@ public class JideTabbedPane extends JTabbedPane {
         list.setCellRenderer(getTabListCellRenderer());
         list.setModel(listModel);
         list.setSelectedIndex(selectedIndex);
-        list.addKeyListener(new KeyListener() {
-            public void keyTyped(KeyEvent e) {
-            }
-
+        list.addKeyListener(new KeyAdapter() {
+            @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     componentSelected(list);
                 }
-            }
-
-            public void keyReleased(KeyEvent e) {
             }
         });
         list.addMouseListener(new MouseAdapter() {
@@ -2272,86 +2226,47 @@ public class JideTabbedPane extends JTabbedPane {
         if (tabIndex != -1 && isEnabledAt(tabIndex)) {
             if (tabIndex == getSelectedIndex() && JideSwingUtilities.isAncestorOfFocusOwner(this)) {
                 if (isAutoFocusOnTabHideClose() && isRequestFocusEnabled()) {
-                    Runnable runnable = new Runnable() {
-                        public void run() {
-                            requestFocus();
-                        }
-                    };
-                    SwingUtilities.invokeLater(runnable);
+                    SwingUtilities.invokeLater(this::requestFocus);
                 }
             }
             else {
                 setSelectedIndex(tabIndex);
                 final Component comp = getComponentAt(tabIndex);
-                if (isAutoFocusOnTabHideClose() && !comp.isVisible() && SystemInfo.isJdk15Above() && !SystemInfo.isJdk6Above()) {
-                    comp.addComponentListener(new ComponentAdapter() {
-                        @Override
-                        public void componentShown(ComponentEvent e) {
-                            // remove the listener
-                            comp.removeComponentListener(this);
-
-                            final Component lastFocused = getLastFocusedComponent(comp);
-                            Runnable runnable = new Runnable() {
-                                public void run() {
-                                    if (lastFocused != null) {
-                                        lastFocused.requestFocus();
-                                    }
-                                    else if (isRequestFocusEnabled()) {
-                                        requestFocus();
-                                    }
-                                }
-                            };
-                            SwingUtilities.invokeLater(runnable);
-                        }
-                    });
+                final Component lastFocused = getLastFocusedComponent(comp);
+                if (lastFocused != null) {
+                    SwingUtilities.invokeLater(lastFocused::requestFocus);
                 }
                 else {
-                    final Component lastFocused = getLastFocusedComponent(comp);
-                    if (lastFocused != null) {
-                        Runnable runnable = new Runnable() {
-                            public void run() {
-                                lastFocused.requestFocus();
-                            }
-                        };
-                        SwingUtilities.invokeLater(runnable);
+                    Container container;
+                    if (comp instanceof Container componentContainer) {
+                        container = componentContainer;
                     }
                     else {
-                        Container container;
-                        if (comp instanceof Container) {
-                            container = (Container) comp;
+                        container = comp.getFocusCycleRootAncestor();
+                    }
+                    FocusTraversalPolicy traversalPolicy = container.getFocusTraversalPolicy();
+                    Component focusComponent;
+                    if (traversalPolicy != null) {
+                        focusComponent = traversalPolicy.getDefaultComponent(container);
+                        if (focusComponent == null) {
+                            focusComponent = traversalPolicy.getFirstComponent(container);
                         }
-                        else {
-                            container = comp.getFocusCycleRootAncestor();
-                        }
-                        FocusTraversalPolicy traversalPolicy = container.getFocusTraversalPolicy();
-                        Component focusComponent;
-                        if (traversalPolicy != null) {
-                            focusComponent = traversalPolicy.getDefaultComponent(container);
-                            if (focusComponent == null) {
-                                focusComponent = traversalPolicy.getFirstComponent(container);
-                            }
-                        }
-                        else if (comp instanceof Container) {
-                            // not sure if it is correct
-                            focusComponent = findFocusableComponent((Container) comp);
-                        }
-                        else {
-                            focusComponent = comp;
-                        }
-                        if (focusComponent != null) {
-                            final Component theComponent = focusComponent;
-                            Runnable runnable = new Runnable() {
-                                public void run() {
-                                    theComponent.requestFocus();
-                                }
-                            };
-                            SwingUtilities.invokeLater(runnable);
-                        }
+                    }
+                    else if (comp instanceof Container componentContainer) {
+                        // not sure if it is correct
+                        focusComponent = findFocusableComponent(componentContainer);
+                    }
+                    else {
+                        focusComponent = comp;
+                    }
+                    if (focusComponent != null) {
+                        final Component theComponent = focusComponent;
+                        SwingUtilities.invokeLater(theComponent::requestFocus);
                     }
                 }
             }
-            if (getUI() instanceof BasicJideTabbedPaneUI) {
-                ((BasicJideTabbedPaneUI) getUI()).ensureActiveTabIsVisible(false);
+            if (getUI() instanceof BasicJideTabbedPaneUI tabbedPaneUI) {
+                tabbedPaneUI.ensureActiveTabIsVisible(false);
             }
             hideTabListPopup();
         }
@@ -2372,8 +2287,8 @@ public class JideTabbedPane extends JTabbedPane {
         int i = 0;
         while (i < parent.getComponentCount()) {
             Component comp = parent.getComponent(i);
-            if (comp instanceof Container) {
-                focusComponent = findFocusableComponent((Container) comp);
+            if (comp instanceof Container container) {
+                focusComponent = findFocusableComponent(container);
                 if (focusComponent != null) {
                     return focusComponent;
                 }
@@ -2500,7 +2415,7 @@ public class JideTabbedPane extends JTabbedPane {
                 case BUTTON_CLOSE:
                     if (isShowCloseButtonOnMouseOver() && !isMouseOver()) {
                         Object property = JideTabbedPane.this.getClientProperty("JideTabbedPane.mouseOverTabIndex");
-                        if (property instanceof Integer && getIndex() >= 0 && (Integer) property != getIndex()) {
+                        if (property instanceof Integer mouseOverTabIndex && getIndex() >= 0 && mouseOverTabIndex != getIndex()) {
                             return;
                         }
                     }

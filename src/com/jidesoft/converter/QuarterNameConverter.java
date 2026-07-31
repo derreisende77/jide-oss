@@ -68,7 +68,7 @@ public class QuarterNameConverter implements ObjectConverter {
 //    public static void main(String[] args) {
 //        ObjectConverter converter = new QuarterNameConverter();
 //        for (int i = 0; i < 4; i++) {
-//            String str = converter.toString(new Integer(i), null);
+//            String str = converter.toString(i, null);
 //            System.out.println(str);
 //            System.out.println(converter.fromString(str, null));
 //        }

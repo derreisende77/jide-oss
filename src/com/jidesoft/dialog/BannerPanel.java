@@ -7,7 +7,6 @@ package com.jidesoft.dialog;
 
 import com.jidesoft.swing.JideSwingUtilities;
 import com.jidesoft.swing.MultilineLabel;
-import com.jidesoft.utils.SecurityUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -161,7 +160,7 @@ public class BannerPanel extends JPanel {
             }
         };
         if (getTitleFont() == null) {
-            setTitleFont(SecurityUtils.createFont(getFont().getFontName(), Font.BOLD, getFont().getSize() + 2));
+            setTitleFont(new Font(getFont().getFontName(), Font.BOLD, getFont().getSize() + 2));
         }
         _titleLabel.setFont(getTitleFont());
         if (getTitleColor() == null) {

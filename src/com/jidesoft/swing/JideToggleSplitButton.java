@@ -9,6 +9,7 @@ import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -111,22 +112,23 @@ public class JideToggleSplitButton extends JideSplitButton implements Accessible
     @Override
     protected void configurePropertiesFromAction(Action action) {
         super.configurePropertiesFromAction(action);
-        boolean selected = false;
-        if (action != null) {
-            selected = Boolean.TRUE.equals(action.getValue(Action.SELECTED_KEY));
+        setSelectedFromAction(action);
+    }
+
+    private void setSelectedFromAction(Action action) {
+        if (!(getModel() instanceof SplitButtonModel splitButtonModel)) {
+            return;
         }
-        if (selected != isSelected()) {
+        boolean selected = action != null && Boolean.TRUE.equals(action.getValue(Action.SELECTED_KEY));
+        if (selected != isButtonSelected()) {
             // This won't notify ActionListeners, but that should be
             // ok as the change is coming from the Action.
             setButtonSelected(selected);
             // Make sure the change actually took effect
             if (!selected && isButtonSelected()) {
-                if (getModel() instanceof DefaultButtonModel) {
-                    ButtonGroup group = (ButtonGroup)
-                            ((DefaultButtonModel) getModel()).getGroup();
-                    if (group != null) {
-                        group.clearSelection();
-                    }
+                ButtonGroup group = splitButtonModel.getGroup();
+                if (group != null) {
+                    group.clearSelection();
                 }
             }
         }
@@ -136,7 +138,7 @@ public class JideToggleSplitButton extends JideSplitButton implements Accessible
     protected void actionPropertyChanged(Action action, String propertyName) {
         super.actionPropertyChanged(action, propertyName);
         if (Action.SELECTED_KEY.equals(propertyName)) {
-            ((ToggleSplitButtonModel) getModel()).setButtonSelected((Boolean) action.getValue(propertyName));
+            setSelectedFromAction(action);
         }
     }
 
@@ -228,7 +230,7 @@ public class JideToggleSplitButton extends JideSplitButton implements Accessible
             fireItemStateChanged(new ItemEvent(this,
                     ItemEvent.ITEM_STATE_CHANGED,
                     this,
-                    this.isSelected() ? ItemEvent.SELECTED : ItemEvent.DESELECTED));
+                    isButtonSelected() ? ItemEvent.SELECTED : ItemEvent.DESELECTED));
         }
 
         /**
@@ -240,7 +242,7 @@ public class JideToggleSplitButton extends JideSplitButton implements Accessible
                 return;
             }
 
-            if (b == false && isArmed()) {
+            if (!b && isArmed()) {
                 setButtonSelected(!this.isButtonSelected());
             }
 
@@ -255,10 +257,10 @@ public class JideToggleSplitButton extends JideSplitButton implements Accessible
             if (!isPressed() && isArmed()) {
                 int modifiers = 0;
                 AWTEvent currentEvent = EventQueue.getCurrentEvent();
-                if (currentEvent instanceof InputEvent) {
-                    modifiers = ((InputEvent) currentEvent).getModifiers();
-                } else if (currentEvent instanceof ActionEvent) {
-                    modifiers = ((ActionEvent) currentEvent).getModifiers();
+                if (currentEvent instanceof InputEvent inputEvent) {
+                    modifiers = inputEvent.getModifiers();
+                } else if (currentEvent instanceof ActionEvent actionEvent) {
+                    modifiers = actionEvent.getModifiers();
                 }
                 fireActionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED,
                         getActionCommand(),
@@ -310,7 +312,7 @@ public class JideToggleSplitButton extends JideSplitButton implements Accessible
         public void itemStateChanged(ItemEvent e) {
             JideToggleSplitButton tb = (JideToggleSplitButton) e.getSource();
             if (JideToggleSplitButton.this.accessibleContext != null) {
-                if (tb.isSelected()) {
+                if (tb.isButtonSelected()) {
                     JideToggleSplitButton.this.accessibleContext.firePropertyChange(AccessibleContext.ACCESSIBLE_STATE_PROPERTY,
                             null, AccessibleState.CHECKED);
                 } else {
@@ -318,6 +320,18 @@ public class JideToggleSplitButton extends JideSplitButton implements Accessible
                             AccessibleState.CHECKED, null);
                 }
             }
+        }
+
+        @Override
+        public AccessibleStateSet getAccessibleStateSet() {
+            AccessibleStateSet states = super.getAccessibleStateSet();
+            if (JideToggleSplitButton.this.isButtonSelected()) {
+                states.add(AccessibleState.CHECKED);
+            }
+            else {
+                states.remove(AccessibleState.CHECKED);
+            }
+            return states;
         }
 
         /**

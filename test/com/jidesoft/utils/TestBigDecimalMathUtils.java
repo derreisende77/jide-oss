@@ -1,10 +1,13 @@
 package com.jidesoft.utils;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-public class TestBigDecimalMathUtils extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class TestBigDecimalMathUtils {
+    @Test
     public void testPerformRoot() {
         BigDecimal dec = new BigDecimal("25029.33333");
         assertEquals(new BigDecimal("158.20662"), round(BigDecimalMathUtils.sqrt(dec), 5));

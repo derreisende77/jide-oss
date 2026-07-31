@@ -30,6 +30,7 @@ public class JideButton extends JButton implements Alignable, ButtonStyle, Compo
 
     private int _buttonStyle = TOOLBAR_STYLE;
     private Cursor _savedCursor;
+    private boolean _hyperlinkCursorSet;
 
     /**
      * By default, if a JideButton is added to a popup menu, clicking on the button will dismiss the popup menu. However
@@ -104,7 +105,7 @@ public class JideButton extends JButton implements Alignable, ButtonStyle, Compo
 
 
     /**
-     * Returns a string that specifies the name of the L&F class that renders this component.
+     * Returns a string that specifies the name of the look and feel class that renders this component.
      *
      * @return the string "ButtonUI"
      *
@@ -186,13 +187,17 @@ public class JideButton extends JButton implements Alignable, ButtonStyle, Compo
         if (getButtonStyle() == HYPERLINK_STYLE
                 && isRolloverEnabled()
                 && ((getText() != null && getText().length() > 0) || getIcon() != null)) {
-            _savedCursor = getCursor();
-            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            if (!_hyperlinkCursorSet) {
+                _savedCursor = getCursor();
+                setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                _hyperlinkCursorSet = true;
+            }
         }
         else {
-            if (_savedCursor != null) {
+            if (_hyperlinkCursorSet) {
                 setCursor(_savedCursor);
                 _savedCursor = null;
+                _hyperlinkCursorSet = false;
             }
         }
     }
@@ -310,9 +315,9 @@ public class JideButton extends JButton implements Alignable, ButtonStyle, Compo
      * Gets the background for different states. The states are defined in ThemePainter as constants. Not all states are
      * supported by all components. If the state is not supported or background is never set, it will return null.
      * <p/>
-     * Please note, each L&F will have its own way to paint the different backgrounds. This method allows you to
+     * Please note, each look and feel will have its own way to paint the different backgrounds. This method allows you to
      * customize it for each component to use a different background. So if you want the background to be used, don't
-     * use a ColorUIResource because UIResource is considered as a setting set by the L&F and any L&F can choose to
+     * use a ColorUIResource because UIResource is considered as a setting set by the look and feel and any look and feel can choose to
      * ignore it.
      *
      * @param state the button state. Valid values are ThemePainter.STATE_DEFAULT, ThemePainter.STATE_ROLLOVER,
@@ -320,29 +325,26 @@ public class JideButton extends JButton implements Alignable, ButtonStyle, Compo
      * @return the background for different states.
      */
     public Color getBackgroundOfState(int state) {
-        switch (state) {
-            case ThemePainter.STATE_DEFAULT:
-                return getBackground();
-            case ThemePainter.STATE_ROLLOVER:
-                return getRolloverBackground();
-            case ThemePainter.STATE_SELECTED:
-                return getSelectedBackground();
-            case ThemePainter.STATE_DISABLE_SELECTED:
+        return switch (state) {
+            case ThemePainter.STATE_DEFAULT -> getBackground();
+            case ThemePainter.STATE_ROLLOVER -> getRolloverBackground();
+            case ThemePainter.STATE_SELECTED -> getSelectedBackground();
+            case ThemePainter.STATE_DISABLE_SELECTED -> {
                 Color background = getSelectedBackground();
-                return background != null ? ColorUtils.toGrayscale(background) : background;
-            case ThemePainter.STATE_PRESSED:
-                return getPressedBackground();
-        }
-        return null;
+                yield background != null ? ColorUtils.toGrayscale(background) : background;
+            }
+            case ThemePainter.STATE_PRESSED -> getPressedBackground();
+            default -> null;
+        };
     }
 
     /**
      * Sets the background for different states.  The states are defined in ThemePainter as constants. Not all states
      * are supported by all components. If the state is not supported or background is never set, it will return null.
      * <p/>
-     * Please note, each L&F will have its own way to paint the different backgrounds. This method allows you to
+     * Please note, each look and feel will have its own way to paint the different backgrounds. This method allows you to
      * customize it for each component to use a different background. So if you want the background to be used, don't
-     * use a ColorUIResource because UIResource is considered as a setting set by the L&F and any L&F can choose to
+     * use a ColorUIResource because UIResource is considered as a setting set by the look and feel and any look and feel can choose to
      * ignore it.
      *
      * @param state the button state. Valid values are ThemePainter.STATE_DEFAULT, ThemePainter.STATE_ROLLOVER,
@@ -351,18 +353,12 @@ public class JideButton extends JButton implements Alignable, ButtonStyle, Compo
      */
     public void setBackgroundOfState(int state, Color color) {
         switch (state) {
-            case ThemePainter.STATE_DEFAULT:
-                setBackground(color);
-                break;
-            case ThemePainter.STATE_ROLLOVER:
-                setRolloverBackground(color);
-                break;
-            case ThemePainter.STATE_SELECTED:
-                setSelectedBackground(color);
-                break;
-            case ThemePainter.STATE_PRESSED:
-                setPressedBackground(color);
-                break;
+            case ThemePainter.STATE_DEFAULT -> setBackground(color);
+            case ThemePainter.STATE_ROLLOVER -> setRolloverBackground(color);
+            case ThemePainter.STATE_SELECTED -> setSelectedBackground(color);
+            case ThemePainter.STATE_PRESSED -> setPressedBackground(color);
+            default -> {
+            }
         }
     }
 
@@ -370,9 +366,9 @@ public class JideButton extends JButton implements Alignable, ButtonStyle, Compo
      * Gets the foreground for different states. The states are defined in ThemePainter as constants. Not all states are
      * supported by all components. If the state is not supported or foreground is never set, it will return null.
      * <p/>
-     * Please note, each L&F will have its own way to paint the different foregrounds. This method allows you to
+     * Please note, each look and feel will have its own way to paint the different foregrounds. This method allows you to
      * customize it for each component to use a different foreground. So if you want the foreground to be used, don't
-     * use a ColorUIResource because UIResource is considered as a setting set by the L&F and any L&F can choose to
+     * use a ColorUIResource because UIResource is considered as a setting set by the look and feel and any look and feel can choose to
      * ignore it.
      *
      * @param state the button state. Valid values are ThemePainter.STATE_DEFAULT, ThemePainter.STATE_ROLLOVER,
@@ -380,17 +376,13 @@ public class JideButton extends JButton implements Alignable, ButtonStyle, Compo
      * @return the foreground for different states.
      */
     public Color getForegroundOfState(int state) {
-        switch (state) {
-            case ThemePainter.STATE_DEFAULT:
-                return getDefaultForeground();
-            case ThemePainter.STATE_ROLLOVER:
-                return getRolloverForeground();
-            case ThemePainter.STATE_SELECTED:
-                return getSelectedForeground();
-            case ThemePainter.STATE_PRESSED:
-                return getPressedForeground();
-        }
-        return null;
+        return switch (state) {
+            case ThemePainter.STATE_DEFAULT -> getDefaultForeground();
+            case ThemePainter.STATE_ROLLOVER -> getRolloverForeground();
+            case ThemePainter.STATE_SELECTED -> getSelectedForeground();
+            case ThemePainter.STATE_PRESSED -> getPressedForeground();
+            default -> null;
+        };
     }
 
 
@@ -398,9 +390,9 @@ public class JideButton extends JButton implements Alignable, ButtonStyle, Compo
      * Sets the foreground for different states.  The states are defined in ThemePainter as constants. Not all states
      * are supported by all components. If the state is not supported or foreground is never set, it will return null.
      * <p/>
-     * Please note, each L&F will have its own way to paint the different foregrounds. This method allows you to
+     * Please note, each look and feel will have its own way to paint the different foregrounds. This method allows you to
      * customize it for each component to use a different foreground. So if you want the foreground to be used, don't
-     * use a ColorUIResource because UIResource is considered as a setting set by the L&F and any L&F can choose to
+     * use a ColorUIResource because UIResource is considered as a setting set by the look and feel and any look and feel can choose to
      * ignore it.
      *
      * @param state the button state. Valid values are ThemePainter.STATE_DEFAULT, ThemePainter.STATE_ROLLOVER,
@@ -409,18 +401,12 @@ public class JideButton extends JButton implements Alignable, ButtonStyle, Compo
      */
     public void setForegroundOfState(int state, Color color) {
         switch (state) {
-            case ThemePainter.STATE_DEFAULT:
-                setDefaultForeground(color);
-                break;
-            case ThemePainter.STATE_ROLLOVER:
-                setRolloverForeground(color);
-                break;
-            case ThemePainter.STATE_SELECTED:
-                setSelectedForeground(color);
-                break;
-            case ThemePainter.STATE_PRESSED:
-                setPressedForeground(color);
-                break;
+            case ThemePainter.STATE_DEFAULT -> setDefaultForeground(color);
+            case ThemePainter.STATE_ROLLOVER -> setRolloverForeground(color);
+            case ThemePainter.STATE_SELECTED -> setSelectedForeground(color);
+            case ThemePainter.STATE_PRESSED -> setPressedForeground(color);
+            default -> {
+            }
         }
     }
 }

@@ -5,10 +5,6 @@
  */
 package com.jidesoft.converter;
 
-import com.jidesoft.utils.ReflectionUtils;
-
-import java.lang.reflect.Array;
-
 /**
  * A typical way to define a constant is to use int as the value type. For example, in SwingConstants, the following
  * values are defined.
@@ -40,9 +36,8 @@ public class EnumConverter implements ObjectConverter {
     /**
      * The constructor to convert a enum type class.
      * <p/>
-     * Reflection is used to invoke Enum#getValues(). Please consider make the enum class protected or public if you
-     * want to release your version after obfuscated. Otherwise, this constructor may not be able to find correct class
-     * method to work.
+     * The enum constants are used in their declaration order and their string representations are obtained using
+     * {@link Object#toString()}.
      *
      * @param enumType the enum type
      * @since 3.4.0
@@ -63,21 +58,12 @@ public class EnumConverter implements ObjectConverter {
             _name = name;
         }
         _type = enumType;
-        try {
-            Object values = ReflectionUtils.callStatic(enumType, "values", null, null);
-            if (!values.getClass().isArray()) {
-                throw new IllegalArgumentException("Illegal enum type.");
-            }
-            int length = Array.getLength(values);
-            _objects = new Object[length];
-            _strings = new String[length];
-            for (int i = 0; i < length; i++) {
-                _objects[i] = Array.get(values, i);
-                _strings[i] = "" + _objects[i];
-            }
-        }
-        catch (Exception e) {
-            throw new IllegalArgumentException("Illegal enum type.");
+        Enum<?>[] values = enumType.getEnumConstants();
+        _objects = new Object[values.length];
+        _strings = new String[values.length];
+        for (int i = 0; i < values.length; i++) {
+            _objects[i] = values[i];
+            _strings[i] = values[i].toString();
         }
     }
 

@@ -9,7 +9,6 @@ import com.jidesoft.plaf.GripperUI;
 import com.jidesoft.plaf.UIDefaultsLookup;
 import com.jidesoft.swing.Gripper;
 import com.jidesoft.swing.JideSwingUtilities;
-import com.jidesoft.utils.SecurityUtils;
 
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
@@ -19,7 +18,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
 /**
- * A Basic L&F implementation of GripperUI.
+ * A Basic look and feel implementation of GripperUI.
  */
 public class BasicGripperUI extends GripperUI {
     private int _size;
@@ -85,7 +84,7 @@ public class BasicGripperUI extends GripperUI {
         else {
             if (b.isOpaque()) {
                 getPainter().paintButtonBackground(b, g, rect, 0, b.isSelected() ? ThemePainter.STATE_SELECTED : ThemePainter.STATE_DEFAULT, false);
-                if ("true".equals(SecurityUtils.getProperty("shadingtheme", "false"))) {
+                if ("true".equals(System.getProperty("shadingtheme", "false"))) {
                     JideSwingUtilities.fillGradient(g, rect, SwingConstants.HORIZONTAL);
                 }
             }

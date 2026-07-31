@@ -60,7 +60,7 @@ public abstract class AbstractListIntelliHints extends AbstractIntelliHints {
      * return new JList() {
      *     public int getVisibleRowCount() {
      *         int size = getModel().getSize();
-     *         return size < super.getVisibleRowCount() ? size : super.getVisibleRowCount();
+     *         return size &lt; super.getVisibleRowCount() ? size : super.getVisibleRowCount();
      *     }
      * <p/>
      *     public Dimension getPreferredScrollableViewportSize() {

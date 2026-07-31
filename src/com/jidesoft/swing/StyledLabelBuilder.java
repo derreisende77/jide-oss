@@ -350,7 +350,7 @@ public class StyledLabelBuilder {
                 }
                 if (subStrings.length >= 2 && subStrings[1].trim().length() > 0) {
                     try {
-                        defaultRows = Integer.valueOf(subStrings[1]);
+                        defaultRows = Integer.parseInt(subStrings[1]);
                     }
                     catch (NumberFormatException e) {
                         return false;
@@ -358,7 +358,7 @@ public class StyledLabelBuilder {
                 }
                 if (subStrings.length >= 3 && subStrings[2].trim().length() > 0) {
                     try {
-                        minRows = Integer.valueOf(subStrings[2]);
+                        minRows = Integer.parseInt(subStrings[2]);
                     }
                     catch (NumberFormatException e) {
                         return false;
@@ -377,7 +377,7 @@ public class StyledLabelBuilder {
                 }
                 if (subStrings.length >= 4 && subStrings[3].trim().length() > 0) {
                     try {
-                        maxRows = Integer.valueOf(subStrings[3]);
+                        maxRows = Integer.parseInt(subStrings[3]);
                     }
                     catch (NumberFormatException e) {
                         return false;
@@ -393,7 +393,7 @@ public class StyledLabelBuilder {
                 }
                 if (subStrings[1].trim().length() > 0) {
                     try {
-                        preferredWidth = Integer.valueOf(subStrings[1]);
+                        preferredWidth = Integer.parseInt(subStrings[1]);
                     }
                     catch (NumberFormatException e) {
                         return false;

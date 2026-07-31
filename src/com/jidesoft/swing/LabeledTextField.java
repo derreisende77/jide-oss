@@ -15,8 +15,6 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 /**
  * <code>LabeledTextField</code> is a combo component which includes text field and an optional JLabel in the front and
@@ -450,7 +448,6 @@ public class LabeledTextField extends JPanel {
         }
         JTextField textField = getTextField();
         if (textField != null) {
-            // this probably won't work with L&F which ignore the background property like GTK L&F
             setBackground(textField.getBackground());
             setForeground(textField.getForeground());
         }
@@ -462,10 +459,7 @@ public class LabeledTextField extends JPanel {
             else {
                 Color background = UIDefaultsLookup.getColor("TextField.disabledBackground");
                 if (background == null) {
-                    // TextField.disabledBackground not defined by metal
                     background = UIDefaultsLookup.getColor("TextField.inactiveBackground");
-                    // Nimbus uses TextField[Disabled].backgroundPainter (not a Color)
-                    // but don't know how to set that for a single panel instance, maybe with a ClientProperty?
                 }
                 setBackground(background);
                 setForeground(UIDefaultsLookup.getColor("TextField.inactiveForeground"));
@@ -474,25 +468,7 @@ public class LabeledTextField extends JPanel {
     }
 
     public int getBaseline(int width, int height) {
-        if (SystemInfo.isJdk6Above()) {
-            try {
-                Method method = Component.class.getMethod("getBaseline", new Class[]{int.class, int.class});
-                Object value = method.invoke(_textField, width, height);
-                if (value instanceof Integer) {
-                    return (Integer) value;
-                }
-            }
-            catch (NoSuchMethodException e) {
-                // ignore
-            }
-            catch (IllegalAccessException e) {
-                // ignore
-            }
-            catch (InvocationTargetException e) {
-                // ignore
-            }
-        }
-        return -1;
+        return _textField.getBaseline(width, height);
     }
 
     /**

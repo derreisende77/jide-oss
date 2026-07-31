@@ -6,8 +6,6 @@
 
 package com.jidesoft.swing;
 
-import com.jidesoft.utils.ReflectionUtils;
-
 import javax.swing.*;
 import java.util.HashSet;
 import java.awt.*;
@@ -19,6 +17,9 @@ import java.util.Set;
  * @since 3.3.6
  */
 public class VisibilityFocusTraversalPolicy extends FocusTraversalPolicy {
+    private static final String LEGACY_GLUE_FOCUS_TRAVERSAL_POLICY =
+            "javax.swing.LegacyGlueFocusTraversalPolicy";
+
     private FocusTraversalPolicy _defaultPolicy;
     private Set<Container> _containers;
 
@@ -40,7 +41,8 @@ public class VisibilityFocusTraversalPolicy extends FocusTraversalPolicy {
      */
     public VisibilityFocusTraversalPolicy(FocusTraversalPolicy defaultPolicy, Container container) {
         super();
-        if (defaultPolicy != null && ReflectionUtils.isSubClassOf(defaultPolicy, "LegacyGlueFocusTraversalPolicy")) {
+        if (defaultPolicy != null
+                && LEGACY_GLUE_FOCUS_TRAVERSAL_POLICY.equals(defaultPolicy.getClass().getName())) {
             throw new IllegalArgumentException("VisibilityFocusTraversalPolicy can't work well with LegacyGlueFocusTraversalPolicy.");
         }
         _defaultPolicy = defaultPolicy;

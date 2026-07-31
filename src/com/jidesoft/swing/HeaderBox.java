@@ -44,7 +44,7 @@ public class HeaderBox extends JideButton {
 
 
     /**
-     * Returns a string that specifies the name of the L&F class that renders this component.
+     * Returns a string that specifies the name of the look and feel class that renders this component.
      *
      * @return the string "HeaderBoxUI"
      */

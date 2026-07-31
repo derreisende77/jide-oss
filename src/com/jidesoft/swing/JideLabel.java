@@ -62,7 +62,7 @@ public class JideLabel extends JLabel implements Alignable, AlignmentSupport {
 
 
     /**
-     * Returns a string that specifies the name of the L&F class that renders this component.
+     * Returns a string that specifies the name of the look and feel class that renders this component.
      *
      * @return the string "ButtonUI"
      *
@@ -83,7 +83,17 @@ public class JideLabel extends JLabel implements Alignable, AlignmentSupport {
         return _orientation;
     }
 
+    /**
+     * Sets the label orientation.
+     *
+     * @param orientation either {@link SwingConstants#HORIZONTAL} or
+     *                    {@link SwingConstants#VERTICAL}
+     * @throws IllegalArgumentException if the orientation is unsupported
+     */
     public void setOrientation(int orientation) {
+        if (orientation != SwingConstants.HORIZONTAL && orientation != SwingConstants.VERTICAL) {
+            throw new IllegalArgumentException("orientation must be either HORIZONTAL or VERTICAL");
+        }
         int old = _orientation;
         if (old != orientation) {
             _orientation = orientation;

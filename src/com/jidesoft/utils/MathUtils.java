@@ -124,12 +124,11 @@ public final class MathUtils {
             return 0d;
         }
         double mean = mean(numbers);
-        List<Number> squares = new ArrayList<Number>();
+        double sum = 0;
         for (Number number : numbers) {
-            double XminMean = number.doubleValue() - mean;
-            squares.add(Math.pow(XminMean, 2));
+            double difference = number.doubleValue() - mean;
+            sum += difference * difference;
         }
-        double sum = sum(squares);
         return sum / (biasCorrected ? (n - 1) : n);
 
     }

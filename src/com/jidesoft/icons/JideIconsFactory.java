@@ -72,11 +72,6 @@ public class JideIconsFactory {
         public static final String MOVE_WEST = "jide/cursor_move_west.gif";
     }
 
-    public static class WindowMenu {
-        public static final String NEW_HORIZONTAL_TAB = "jide/windows_new_horizontal_tab_group.png";
-        public static final String NEW_VERTICAL_TAB = "jide/windows_new_vertical_tab_group.png";
-    }
-
     public static class Arrow {
         public static final String DOWN = "jide/direction_down.gif";
         public static final String UP = "jide/direction_up.gif";
@@ -87,14 +82,6 @@ public class JideIconsFactory {
 
 
     public static final String TAIL = "jide/tail.gif";
-
-    public static final String MENU_CHECKBOX_VSNET = "jide/menu_checkbox_vsnet.gif";
-
-    public static final String MENU_CHECKBOX_ECLIPSE = "jide/menu_checkbox_eclipse.gif";
-
-    public static final String MENU_RADIOBUTTON_VSNET = "jide/menu_radiobutton_vnset.gif";
-
-    public static final String MENU_RADIOBUTTON_ECLIPSE = "jide/menu_radiobutton_eclipse.gif";
 
     public static final String SAVE = "jide/save.png";
 

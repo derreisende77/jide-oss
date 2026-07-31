@@ -591,7 +591,7 @@ public class CheckBoxTree extends JTree {
     /**
      * Sets the value of property clickInCheckBoxOnly.
      *
-     * @param clickInCheckBoxOnly see {@Link #isClickInCheckBoxOnly} for more information.
+     * @param clickInCheckBoxOnly see {@link #isClickInCheckBoxOnly()} for more information.
      */
     public void setClickInCheckBoxOnly(boolean clickInCheckBoxOnly) {
         if (clickInCheckBoxOnly != _clickInCheckBoxOnly) {

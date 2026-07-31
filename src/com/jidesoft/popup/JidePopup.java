@@ -12,8 +12,6 @@ import com.jidesoft.plaf.UIDefaultsLookup;
 import com.jidesoft.swing.*;
 import com.jidesoft.utils.PortingUtils;
 import com.jidesoft.utils.SecurityUtils;
-import com.jidesoft.utils.SystemInfo;
-
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
@@ -242,12 +240,13 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
     private int _popupType = HEAVY_WEIGHT_POPUP;
     private ActionListener _escapeActionListener;
     private Object HIDE_POPUP_KEY = null;
+    private boolean _hiding;
 
     /**
      * Creates a Popup.
      */
     public JidePopup() {
-        _excludedComponents = new ArrayList<Component>();
+        _excludedComponents = new ArrayList<>();
         setRootPane(createRootPane());
         setLayout(new BorderLayout());
         setRootPaneCheckingEnabled(true);
@@ -263,8 +262,8 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
         comboBox.doLayout();
         Component[] components = comboBox.getComponents();
         for (Component component : components) {
-            if (component instanceof AbstractButton) {
-                HIDE_POPUP_KEY = ((AbstractButton) component).getClientProperty("doNotCancelPopup");
+            if (component instanceof AbstractButton button) {
+                HIDE_POPUP_KEY = button.getClientProperty("doNotCancelPopup");
                 break;
             }
         }
@@ -280,7 +279,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
         JRootPane pane = new JRootPane();
         // by default, the subclass BorderLayout cause memory leak if isPopupVolatile in AbstractComboBox.
         pane.getContentPane().setLayout(new BorderLayout());
-        pane.setOpaque(false);  // on Nimbus L&F, JRootPane is opaque by default. So we have to set it to false explicitly.
+        pane.setOpaque(false);
         return pane;
     }
 
@@ -1058,12 +1057,12 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
      */
     protected Rectangle getAdjustedRectangle(int x, int y, Component owner) {
         boolean useAllDevices = false;
-        if (owner instanceof JComponent) {
-            JComponent comp = (JComponent) owner;
+        if (owner instanceof JComponent ownerComponent) {
+            JComponent comp = ownerComponent;
             while (comp != null) {
                 Object property = comp.getClientProperty("useAllMonitorDevices");
-                if (property instanceof Boolean) {
-                    useAllDevices = (Boolean) property;
+                if (property instanceof Boolean useAllMonitorDevices) {
+                    useAllDevices = useAllMonitorDevices;
                     break;
                 }
                 if (!(comp.getParent() instanceof JComponent)) {
@@ -1078,6 +1077,11 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
 
     protected void createWindow(Component owner, int x, int y) {
         if (_popupType == LIGHT_WEIGHT_POPUP) {
+            JRootPane rootPane = JideSwingUtilities.getOutermostRootPane(owner);
+            if (rootPane == null) {
+                return;
+            }
+
             if (_panel == null) {
                 _panel = createLightweightPopupContainer(owner);
                 _resizableSupport = _panel;
@@ -1104,20 +1108,12 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
                 y = p.y;
             }
 
-            JRootPane rootPane = JideSwingUtilities.getOutermostRootPane(owner);
-            JLayeredPane layeredPane;
-            if (rootPane != null)
-                layeredPane = rootPane.getLayeredPane();
-            else {
-                return; // has to have layer pane
-            }
+            JLayeredPane layeredPane = rootPane.getLayeredPane();
 
             Point p = new Point(x, y);
             SwingUtilities.convertPointFromScreen(p, layeredPane);
             layeredPane.add(_panel, JLayeredPane.PALETTE_LAYER);
-            if (SystemInfo.isJdk15Above()) {
-                layeredPane.setComponentZOrder(_panel, 0);
-            }
+            layeredPane.setComponentZOrder(_panel, 0);
 
             _panel.setLocation(p.x, p.y);
         }
@@ -1176,7 +1172,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
     protected static Frame getFrame(Component c) {
         Component w = c;
 
-        while (!(w instanceof Frame) && (w != null)) {
+        while (w != null && !(w instanceof Frame)) {
             w = w.getParent();
         }
         return (Frame) w;
@@ -1190,11 +1186,11 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
     protected ResizableWindow createHeavyweightPopupContainer(Component owner) {
         ResizableWindow container;
         Component topLevelAncestor = getTopLevelAncestor(owner);
-        if (topLevelAncestor instanceof Frame) {
-            container = new ResizableWindow((Frame) topLevelAncestor);
+        if (topLevelAncestor instanceof Frame frame) {
+            container = new ResizableWindow(frame);
         }
-        else if (topLevelAncestor instanceof Window) {
-            container = new ResizableWindow((Window) topLevelAncestor);
+        else if (topLevelAncestor instanceof Window window) {
+            container = new ResizableWindow(window);
         }
         else {
             Frame frame = getFrame(owner);
@@ -1204,16 +1200,16 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
         container.getContentPane().add(this);
 
         Object opaque = getClientProperty(CLIENT_PROPERTY_WINDOW_OPAQUE);
-        if (opaque instanceof Boolean) {
-            JideSwingUtilities.setWindowOpaque(container, (Boolean) opaque);
+        if (opaque instanceof Boolean windowOpaque) {
+            JideSwingUtilities.setWindowOpaque(container, windowOpaque);
         }
         Object opacity = getClientProperty(CLIENT_PROPERTY_WINDOW_OPACITY);
-        if (opacity instanceof Float) {
-            JideSwingUtilities.setWindowOpacity(container, (Float) opacity);
+        if (opacity instanceof Float windowOpacity) {
+            JideSwingUtilities.setWindowOpacity(container, windowOpacity);
         }
         Object shape = getClientProperty(CLIENT_PROPERTY_WINDOW_SHAPE);
-        if (shape instanceof Shape) {
-            JideSwingUtilities.setWindowShape(container, (Shape) shape);
+        if (shape instanceof Shape windowShape) {
+            JideSwingUtilities.setWindowShape(container, windowShape);
         }
 
         return container;
@@ -1357,7 +1353,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
     }
 
     protected void installBorder() {
-        if (getPopupBorder() != null && (!(_resizableSupport instanceof Component) || getPopupBorder().getBorderInsets((Component) _resizableSupport) != null)) {
+        if (getPopupBorder() != null && (!(_resizableSupport instanceof Component component) || getPopupBorder().getBorderInsets(component) != null)) {
             if (isResizable()) {
                 _resizableSupport.getResizable().setResizableCorners(Resizable.ALL);
             }
@@ -1385,7 +1381,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
                 }
                 if (!CLIENT_PROPERTY_VALUE_POPUP_TYPE_COMBOBOX.equals(getClientProperty(CLIENT_PROPERTY_POPUP_TYPE))) {
                     Border border = UIDefaultsLookup.getBorder("PopupMenu.border");
-                    if (border != null && (!(_resizableSupport instanceof Component) || border.getBorderInsets((Component) _resizableSupport) != null)) {
+                    if (border != null && (!(_resizableSupport instanceof Component component) || border.getBorderInsets(component) != null)) {
                         _resizableSupport.setBorder(border);
                     }
                 }
@@ -1424,8 +1420,8 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
                     Runnable runnable = new Runnable() {
                         public void run() {
                             Component c = getDefaultFocusComponent();
-                            if (c instanceof JComponent) {
-                                ((JComponent) c).requestFocus(true);
+                            if (c instanceof JComponent component) {
+                                component.requestFocus(true);
                             }
                         }
                     };
@@ -1474,8 +1470,8 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
                     Runnable runnable = new Runnable() {
                         public void run() {
                             Component c = getDefaultFocusComponent();
-                            if (c instanceof JComponent) {
-                                ((JComponent) c).requestFocus(true);
+                            if (c instanceof JComponent component) {
+                                component.requestFocus(true);
                             }
                         }
                     };
@@ -1541,13 +1537,13 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
             _currentPanel = null;
         }
         else if (_popupType == HEAVY_WEIGHT_POPUP) {
-            if (_currentWindow instanceof JWindow && ((JWindow) _currentWindow).getGlassPane() != null) {
-                ((JWindow) _currentWindow).getGlassPane().setVisible(false);
-                ((JWindow) _currentWindow).getGlassPane().setCursor(Cursor.getDefaultCursor());
+            if (_currentWindow instanceof JWindow window && window.getGlassPane() != null) {
+                window.getGlassPane().setVisible(false);
+                window.getGlassPane().setCursor(Cursor.getDefaultCursor());
             }
-            else if (_currentWindow instanceof JDialog && ((JDialog) _currentWindow).getGlassPane() != null) {
-                ((JDialog) _currentWindow).getGlassPane().setVisible(false);
-                ((JDialog) _currentWindow).getGlassPane().setCursor(Cursor.getDefaultCursor());
+            else if (_currentWindow instanceof JDialog dialog && dialog.getGlassPane() != null) {
+                dialog.getGlassPane().setVisible(false);
+                dialog.getGlassPane().setCursor(Cursor.getDefaultCursor());
             }
             _currentWindow = null;
         }
@@ -1573,18 +1569,18 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
             }
         }
         else if (_popupType == HEAVY_WEIGHT_POPUP) {
-            if (f.getTopLevelAncestor() instanceof JWindow)
-                _currentWindow = (JWindow) f.getTopLevelAncestor();
-            if (f.getTopLevelAncestor() instanceof JDialog)
-                _currentWindow = (JDialog) f.getTopLevelAncestor();
+            if (f.getTopLevelAncestor() instanceof JWindow window)
+                _currentWindow = window;
+            if (f.getTopLevelAncestor() instanceof JDialog dialog)
+                _currentWindow = dialog;
 
-            if (_currentWindow instanceof JWindow && ((JWindow) _currentWindow).getGlassPane() != null) {
-                ((JWindow) _currentWindow).getGlassPane().setVisible(true);
-                ((JWindow) _currentWindow).getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+            if (_currentWindow instanceof JWindow window && window.getGlassPane() != null) {
+                window.getGlassPane().setVisible(true);
+                window.getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
             }
-            else if (_currentWindow instanceof JDialog && ((JDialog) _currentWindow).getGlassPane() != null) {
-                ((JDialog) _currentWindow).getGlassPane().setVisible(true);
-                ((JDialog) _currentWindow).getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
+            else if (_currentWindow instanceof JDialog dialog && dialog.getGlassPane() != null) {
+                dialog.getGlassPane().setVisible(true);
+                dialog.getGlassPane().setCursor(Cursor.getPredefinedCursor(Cursor.MOVE_CURSOR));
             }
 
             _isDragging = true;
@@ -1781,7 +1777,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
 
         Component clickedComponent = (Component) e.getSource();
         Object popupMenuToCancel = getClientProperty("popupMenuToCancel");
-        if (clickedComponent instanceof JComponent && HIDE_POPUP_KEY != null && popupMenuToCancel != null && ((JComponent) clickedComponent).getClientProperty("doNotCancelPopup") == HIDE_POPUP_KEY && this.isAncestorOf(clickedComponent)) {
+        if (clickedComponent instanceof JComponent component && HIDE_POPUP_KEY != null && popupMenuToCancel != null && component.getClientProperty("doNotCancelPopup") == HIDE_POPUP_KEY && this.isAncestorOf(clickedComponent)) {
             MenuSelectionManager manager = MenuSelectionManager.defaultManager();
             MenuElement[] menuElements = manager.getSelectedPath();
             if (menuElements != null) {
@@ -1809,11 +1805,9 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
             if (_popupType == LIGHT_WEIGHT_POPUP) {
                 startingBounds = _panel.getBounds();
                 Container parent = _panel.getParent();
-                if (SystemInfo.isJdk15Above()) {
-                    if (isClickOnPopup(e) && parent.getComponentZOrder(_panel) != 0) {
-                        parent.setComponentZOrder(_panel, 0);
-                        parent.repaint();
-                    }
+                if (isClickOnPopup(e) && parent.getComponentZOrder(_panel) != 0) {
+                    parent.setComponentZOrder(_panel, 0);
+                    parent.repaint();
                 }
             }
             else if (_popupType == HEAVY_WEIGHT_POPUP) {
@@ -1835,7 +1829,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
 
                 // drag on gripper
                 final Component gripper = getUI().getGripper();
-                if (gripper instanceof Container && (gripper == component || ((Container) gripper).isAncestorOf(component))) {
+                if (gripper instanceof Container container && (gripper == component || container.isAncestorOf(component))) {
                     beginDragging(this, screenPoint.x, screenPoint.y, _relativeX, _relativeY);
                     e.consume();
                 }
@@ -1853,8 +1847,8 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
     protected void handleMouseDragged(MouseEvent e) {
         if (isDragging()) {
             Point screenPoint = e.getPoint();
-            if (e.getSource() instanceof Component) {
-                convertPointToScreen(screenPoint, ((Component) e.getSource()), true);
+            if (e.getSource() instanceof Component source) {
+                convertPointToScreen(screenPoint, source, true);
                 drag(null, screenPoint.x, screenPoint.y, e.getModifiersEx());
                 e.consume();
             }
@@ -1863,14 +1857,14 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
 
     protected void handleMouseEntered(MouseEvent e) {
         if (_popupType == LIGHT_WEIGHT_POPUP) {
-            if ((_panel != null) && e.getSource() instanceof Component &&
-                    _panel.isAncestorOf(((Component) e.getSource())) && getTimeout() != 0) {
+            if ((_panel != null) && e.getSource() instanceof Component source &&
+                    _panel.isAncestorOf(source) && getTimeout() != 0) {
                 stopTimeoutTimer();
             }
         }
         else if (_popupType == HEAVY_WEIGHT_POPUP) {
-            if ((_window != null) && e.getSource() instanceof Component &&
-                    _window.isAncestorOf(((Component) e.getSource())) && getTimeout() != 0) {
+            if ((_window != null) && e.getSource() instanceof Component source &&
+                    _window.isAncestorOf(source) && getTimeout() != 0) {
                 stopTimeoutTimer();
             }
         }
@@ -1878,14 +1872,14 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
 
     protected void handleMouseExited(MouseEvent e) {
         if (_popupType == LIGHT_WEIGHT_POPUP) {
-            if ((_panel != null) && e.getSource() instanceof Component &&
-                    _panel.isAncestorOf(((Component) e.getSource())) && getTimeout() != 0) {
+            if ((_panel != null) && e.getSource() instanceof Component source &&
+                    _panel.isAncestorOf(source) && getTimeout() != 0) {
                 startTimeoutTimer();
             }
         }
         else if (_popupType == HEAVY_WEIGHT_POPUP) {
-            if ((_window != null) && e.getSource() instanceof Component &&
-                    _window.isAncestorOf(((Component) e.getSource())) && getTimeout() != 0) {
+            if ((_window != null) && e.getSource() instanceof Component source &&
+                    _window.isAncestorOf(source) && getTimeout() != 0) {
                 startTimeoutTimer();
             }
         }
@@ -1896,15 +1890,8 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
 
     private static boolean doUnpostPopupOnDeactivation() {
         if (!checkedUnpostPopup) {
-            unpostPopup = (Boolean) java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Object>() {
-                        public Object run() {
-                            String pKey = "sun.swing.unpostPopupsOnWindowDeactivation";
-                            String value = System.getProperty(pKey, "true");
-                            return Boolean.valueOf(value);
-                        }
-                    }
-            );
+            String value = System.getProperty("sun.swing.unpostPopupsOnWindowDeactivation", "true");
+            unpostPopup = Boolean.parseBoolean(value);
             checkedUnpostPopup = true;
         }
         return unpostPopup;
@@ -1933,8 +1920,8 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
                     if (oppositeWindow == getTopLevelAncestor()) {
                         return;
                     }
-                    if (oppositeWindow instanceof RootPaneContainer) {
-                        JComponent realParent = getRealParent((RootPaneContainer) oppositeWindow);
+                    if (oppositeWindow instanceof RootPaneContainer rootPaneContainer) {
+                        JComponent realParent = getRealParent(rootPaneContainer);
                         if (realParent != null && realParent.getTopLevelAncestor() == getTopLevelAncestor()) {
                             return;
                         }
@@ -1949,8 +1936,8 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
         JComponent c = JideSwingUtilities.getFirstJComponent(rootPaneContainer);
         if (c != null) {
             Object clientProperty = c.getClientProperty(CLIENT_PROPERTY_POPUP_ACTUAL_OWNER);
-            if (clientProperty instanceof JComponent) {
-                return (JComponent) clientProperty;
+            if (clientProperty instanceof JComponent component) {
+                return component;
             }
         }
         return null;
@@ -1965,10 +1952,9 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
      */
     protected void handleComponentEvent(ComponentEvent e) {
         Component owner = getActualOwner();
-        if (!(e.getSource() instanceof Container)) {
+        if (!(e.getSource() instanceof Container container)) {
             return;
         }
-        Container container = (Container) e.getSource();
         if (e.getID() == ComponentEvent.COMPONENT_HIDDEN && (container == owner || container.isAncestorOf(owner))) {
             ancestorHidden();
         }
@@ -2048,6 +2034,21 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
     }
 
     public void hidePopupImmediately(boolean canceled) {
+        if (_hiding) {
+            return;
+        }
+
+        _hiding = true;
+        try {
+            doHidePopupImmediately(canceled);
+        }
+        finally {
+            _hiding = false;
+        }
+    }
+
+    private void doHidePopupImmediately(boolean canceled) {
+        stopTimeoutTimer();
         Component owner = getActualOwner();
         if (owner != null) {
             owner.removeHierarchyListener(_hierarchyListener);
@@ -2132,7 +2133,6 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
         });
 
         _resizableSupport = null;
-        _owner = null;
         _actualOwner = null;
         _actualOwnerLocation = null;
     }
@@ -2162,46 +2162,34 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
                         return;
                     }
 
-                    if (event instanceof MouseEvent) {
+                    if (event instanceof MouseEvent mouseEvent) {
                         if (event.getID() == MouseEvent.MOUSE_PRESSED) {
-                            handleMousePressed((MouseEvent) event);
+                            handleMousePressed(mouseEvent);
                         }
                         else if (event.getID() == MouseEvent.MOUSE_DRAGGED) {
-                            handleMouseDragged((MouseEvent) event);
+                            handleMouseDragged(mouseEvent);
                         }
                         else if (event.getID() == MouseEvent.MOUSE_RELEASED) {
-                            handleMouseReleased((MouseEvent) event);
+                            handleMouseReleased(mouseEvent);
                         }
                         else if (event.getID() == MouseEvent.MOUSE_ENTERED) {
-                            handleMouseEntered((MouseEvent) event);
+                            handleMouseEntered(mouseEvent);
                         }
                         else if (event.getID() == MouseEvent.MOUSE_EXITED) {
-                            handleMouseExited((MouseEvent) event);
+                            handleMouseExited(mouseEvent);
                         }
                     }
-                    else if (event instanceof WindowEvent) {
-                        handleWindowEvent((WindowEvent) event);
+                    else if (event instanceof WindowEvent windowEvent) {
+                        handleWindowEvent(windowEvent);
                     }
-                    else if (event instanceof ComponentEvent) {
-                        handleComponentEvent((ComponentEvent) event);
+                    else if (event instanceof ComponentEvent componentEvent) {
+                        handleComponentEvent(componentEvent);
                     }
                 }
             };
         }
-        try {
-            java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Object>() {
-                        public Object run() {
-                            Toolkit.getDefaultToolkit().addAWTEventListener(_awtEventListener, AWTEvent.MOUSE_EVENT_MASK
-                                    | AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.WINDOW_EVENT_MASK | AWTEvent.COMPONENT_EVENT_MASK);
-                            return null;
-                        }
-                    }
-            );
-        }
-        catch (SecurityException e) {
-            throw new RuntimeException(e);
-        }
+        Toolkit.getDefaultToolkit().addAWTEventListener(_awtEventListener, AWTEvent.MOUSE_EVENT_MASK
+                | AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.WINDOW_EVENT_MASK | AWTEvent.COMPONENT_EVENT_MASK);
     }
 
     /**
@@ -2210,7 +2198,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
      * @return true to use the AWT event listener; false otherwise
      */
     protected boolean shouldAWTEventListenerBeUsed() {
-        return SecurityUtils.isAWTEventListenerDisabled() || "true".equals(SecurityUtils.getProperty("jide.disableAWTEventListener", "false"));
+        return SecurityUtils.isAWTEventListenerDisabled() || "true".equals(System.getProperty("jide.disableAWTEventListener", "false"));
     }
 
     /**
@@ -2221,20 +2209,8 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
             return;
         }
 
-        try {
-            java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Object>() {
-                        public Object run() {
-                            Toolkit.getDefaultToolkit().removeAWTEventListener(_awtEventListener);
-                            _awtEventListener = null;
-                            return null;
-                        }
-                    }
-            );
-        }
-        catch (SecurityException e) {
-            throw new RuntimeException(e);
-        }
+        Toolkit.getDefaultToolkit().removeAWTEventListener(_awtEventListener);
+        _awtEventListener = null;
     }
 
     /**
@@ -2362,7 +2338,7 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
         if (_detached != detached) {
             boolean old = _detached;
             _detached = detached;
-            firePropertyChange("detacted", old, _detached);
+            firePropertyChange(DETACHED_PROPERTY, old, _detached);
             if (_resizableSupport != null) { // todo: check property change
                 if (_detached) {
                     if (getPopupBorder() == null) {
@@ -2678,17 +2654,17 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
         boolean contain = _excludedComponents.contains(component);
         if (!contain) {
             for (Component c : _excludedComponents) {
-                if (c instanceof Container) {
-                    if (((Container) c).isAncestorOf(component)) {
+                if (c instanceof Container container) {
+                    if (container.isAncestorOf(component)) {
                         return true;
                     }
                 }
             }
 
-            if (component instanceof JComponent) {
-                Container c = ((JComponent) component).getTopLevelAncestor();
-                if (c instanceof RootPaneContainer) {
-                    JComponent realParent = getRealParent((RootPaneContainer) c);
+            if (component instanceof JComponent jComponent) {
+                Container c = jComponent.getTopLevelAncestor();
+                if (c instanceof RootPaneContainer rootPaneContainer) {
+                    JComponent realParent = getRealParent(rootPaneContainer);
                     if (realParent != null && realParent.getTopLevelAncestor() == getTopLevelAncestor()) {
                         return true;
                     }
@@ -2723,6 +2699,9 @@ public class JidePopup extends JComponent implements Accessible, WindowConstants
     public void setPopupType(int popupType) {
         if (popupType != LIGHT_WEIGHT_POPUP && popupType != HEAVY_WEIGHT_POPUP) {
             throw new IllegalArgumentException("invalid popup type. It must be JidePopup.HEAVY_WEIGHT_POPUP or JidePopup.LIGHT_WEIGHT_POPUP.");
+        }
+        if (_popupType != popupType && (_window != null || _panel != null)) {
+            throw new IllegalStateException("popup type cannot be changed while a popup container exists");
         }
         _popupType = popupType;
     }

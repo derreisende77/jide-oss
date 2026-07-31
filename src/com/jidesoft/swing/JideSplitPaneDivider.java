@@ -9,8 +9,6 @@ package com.jidesoft.swing;
 
 import com.jidesoft.plaf.UIDefaultsLookup;
 import com.jidesoft.plaf.basic.Painter;
-import com.jidesoft.utils.PortingUtils;
-
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.MouseInputAdapter;
@@ -810,13 +808,13 @@ public class JideSplitPaneDivider extends JPanel
         if (_jideSplitPane.isOneTouchExpandable()) {
             for (int i = 0; i < paneCount; i++) {
                 Component component = _jideSplitPane.getPaneAt(i);
-                PortingUtils.setMinimumSize(component, new Dimension(0, 0));
+                component.setMinimumSize(new Dimension(0, 0));
             }
         }
         else {
             for (int i = 0; i < paneCount; i++) {
                 Component component = _jideSplitPane.getPaneAt(i);
-                PortingUtils.setMinimumSize(component, null);
+                component.setMinimumSize(null);
             }
         }
     }

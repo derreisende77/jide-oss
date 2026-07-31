@@ -68,8 +68,7 @@ public class ResizableMouseInputAdapter extends MouseInputAdapter {
         _eventMouseScreenX = p.x;
         _eventMouseScreenY = p.y;
 
-        if (e.getSource() instanceof Resizable.ResizeCorner) {
-            Resizable.ResizeCorner corner = (Resizable.ResizeCorner) e.getSource();
+        if (e.getSource() instanceof Resizable.ResizeCorner corner) {
             _resizeCorner = corner.getCorner();
         }
         // resize component
@@ -163,17 +162,17 @@ public class ResizableMouseInputAdapter extends MouseInputAdapter {
 
             Container c = _resizable.getComponent().getTopLevelAncestor();
 
-            if (c instanceof JFrame) {
-                ((JFrame) c).getGlassPane().setVisible(true);
-                ((JFrame) c).getGlassPane().setCursor(s);
+            if (c instanceof JFrame frame) {
+                frame.getGlassPane().setVisible(true);
+                frame.getGlassPane().setCursor(s);
             }
-            else if (c instanceof JWindow) {
-                ((JWindow) c).getGlassPane().setVisible(true);
-                ((JWindow) c).getGlassPane().setCursor(s);
+            else if (c instanceof JWindow window) {
+                window.getGlassPane().setVisible(true);
+                window.getGlassPane().setCursor(s);
             }
-            else if (c instanceof JDialog) {
-                ((JDialog) c).getGlassPane().setVisible(true);
-                ((JDialog) c).getGlassPane().setCursor(s);
+            else if (c instanceof JDialog dialog) {
+                dialog.getGlassPane().setVisible(true);
+                dialog.getGlassPane().setCursor(s);
             }
 
             _resizable.beginResizing(_resizeCorner);
@@ -622,13 +621,13 @@ public class ResizableMouseInputAdapter extends MouseInputAdapter {
 
                 ((JFrame) _resizable.getComponent().getTopLevelAncestor()).getGlassPane().setVisible(false);
             }
-            else if (c instanceof JWindow) {
-                ((JWindow) c).getGlassPane().setCursor(Cursor.getDefaultCursor());
-                ((JWindow) c).getGlassPane().setVisible(false);
+            else if (c instanceof JWindow window) {
+                window.getGlassPane().setCursor(Cursor.getDefaultCursor());
+                window.getGlassPane().setVisible(false);
             }
-            else if (c instanceof JDialog) {
-                ((JDialog) c).getGlassPane().setCursor(Cursor.getDefaultCursor());
-                ((JDialog) c).getGlassPane().setVisible(false);
+            else if (c instanceof JDialog dialog) {
+                dialog.getGlassPane().setCursor(Cursor.getDefaultCursor());
+                dialog.getGlassPane().setVisible(false);
             }
 
             _resizable.endResizing(_resizeCorner);
@@ -648,8 +647,7 @@ public class ResizableMouseInputAdapter extends MouseInputAdapter {
      */
     @Override
     public void mouseMoved(MouseEvent e) {
-        if (e.getSource() instanceof Resizable.ResizeCorner) {
-            Resizable.ResizeCorner corner = (Resizable.ResizeCorner) e.getSource();
+        if (e.getSource() instanceof Resizable.ResizeCorner corner) {
             boolean ltr = corner.getComponentOrientation().isLeftToRight();
             switch (corner.getCorner()) {
                 case Resizable.LOWER_RIGHT:
@@ -720,8 +718,7 @@ public class ResizableMouseInputAdapter extends MouseInputAdapter {
     // implements java.awt.event.MouseListener
     @Override
     public void mouseExited(MouseEvent e) {
-        if (e.getSource() instanceof Resizable.ResizeCorner) {
-            Resizable.ResizeCorner corner = (Resizable.ResizeCorner) e.getSource();
+        if (e.getSource() instanceof Resizable.ResizeCorner corner) {
             corner.setCursor(Cursor.getDefaultCursor());
         }
         else {

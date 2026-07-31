@@ -12,7 +12,6 @@ import com.jidesoft.swing.FolderChooser;
 import com.jidesoft.swing.JideBoxLayout;
 import com.jidesoft.swing.SelectAllUtils;
 import com.jidesoft.utils.SystemInfo;
-import sun.awt.shell.ShellFolder;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
@@ -542,15 +541,14 @@ public class BasicFolderChooserUI extends BasicFileChooserUI implements FolderCh
      * @return <code>true</code> if <code>f</code> is a real file or directory.
      */
     public static boolean isFileSystem(File f) {
-        if (f instanceof ShellFolder) {
-            ShellFolder sf = (ShellFolder) f;
-            // Shortcuts to directories are treated as not being file system objects,
-            // so that they are never returned by JFileChooser.
-            return sf.isFileSystem() && !(sf.isLink() && sf.isDirectory());
-        }
-        else {
-            return true;
-        }
+        return isFileSystem(f, FileSystemView.getFileSystemView());
+    }
+
+    static boolean isFileSystem(File f, FileSystemView fileSystemView) {
+        // Shortcuts to directories are treated as not being file system objects,
+        // so that they are never returned by JFileChooser.
+        return fileSystemView.isFileSystem(f)
+                && !(fileSystemView.isLink(f) && f.isDirectory());
     }
 
     private TreePath getTreePathForFile(File file) {

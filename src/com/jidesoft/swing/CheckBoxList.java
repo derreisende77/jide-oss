@@ -10,6 +10,7 @@ import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.plaf.basic.BasicRadioButtonUI;
 import javax.swing.text.Position;
 import java.awt.*;
 import java.awt.event.*;
@@ -199,38 +200,218 @@ public class CheckBoxList extends JList {
 
     protected static class Handler implements MouseListener, MouseMotionListener, KeyListener, ListSelectionListener, PropertyChangeListener, ListDataListener {
         protected CheckBoxList _list;
-        int hotspot = new JCheckBox().getPreferredSize().width;
-
 
         public Handler(CheckBoxList list) {
             _list = list;
         }
 
         public void propertyChange(PropertyChangeEvent evt) {
-            if (evt.getOldValue() instanceof ListModel) {
-                ((ListModel) evt.getOldValue()).removeListDataListener(this);
+            if (evt.getOldValue() instanceof ListModel oldModel) {
+                oldModel.removeListDataListener(this);
             }
-            if (evt.getNewValue() instanceof ListModel) {
-                _list.getCheckBoxListSelectionModel().setModel((ListModel) evt.getNewValue());
-                ((ListModel) evt.getNewValue()).addListDataListener(this);
+            if (evt.getNewValue() instanceof ListModel newModel) {
+                _list.getCheckBoxListSelectionModel().setModel(newModel);
+                newModel.addListDataListener(this);
             }
         }
 
         protected boolean clicksInCheckBox(MouseEvent e) {
-            int index = _list.locationToIndex(e.getPoint());
-            Rectangle bounds = _list.getCellBounds(index, index);
+            return clicksInCheckBox(e, getCellIndex(e.getPoint()));
+        }
 
-            if (bounds != null) {
-                if (_list.getComponentOrientation().isLeftToRight()) {
-                    return e.getX() < bounds.x + hotspot;
-                }
-                else {
-                    return e.getX() > bounds.x + bounds.width - hotspot;
-                }
+        private int getCellIndex(Point point) {
+            int index = _list.locationToIndex(point);
+            if (index < 0) {
+                return -1;
             }
-            else {
+
+            Rectangle bounds = _list.getCellBounds(index, index);
+            return bounds != null && bounds.contains(point) ? index : -1;
+        }
+
+        private boolean clicksInCheckBox(MouseEvent e, int index) {
+            if (index < 0 || !_list.isCheckBoxVisible(index)) {
                 return false;
             }
+
+            Rectangle bounds = _list.getCellBounds(index, index);
+            if (bounds == null) {
+                return false;
+            }
+
+            try {
+                ListCellRenderer renderer = _list.getCellRenderer();
+                if (renderer == null) {
+                    return false;
+                }
+
+                boolean selected = _list.isSelectedIndex(index);
+                boolean focused = _list.hasFocus() && index == _list.getLeadSelectionIndex();
+                Component rendererComponent = renderer.getListCellRendererComponent(
+                        _list, _list.getModel().getElementAt(index), index, selected, focused);
+                if (rendererComponent == null) {
+                    return false;
+                }
+
+                rendererComponent.setBounds(0, 0, bounds.width, bounds.height);
+                layoutRecursively(rendererComponent);
+
+                AbstractButton button = findCheckBoxButton(rendererComponent);
+                Rectangle iconBounds = getIconBounds(button);
+                if (iconBounds == null) {
+                    return false;
+                }
+
+                Rectangle rendererIconBounds = SwingUtilities.convertRectangle(
+                        button, iconBounds, rendererComponent);
+                rendererIconBounds.translate(bounds.x, bounds.y);
+                return rendererIconBounds.contains(e.getPoint());
+            }
+            catch (RuntimeException ex) {
+                return false;
+            }
+        }
+
+        private static void layoutRecursively(Component component) {
+            if (component instanceof Container container) {
+                container.doLayout();
+                for (Component child : container.getComponents()) {
+                    layoutRecursively(child);
+                }
+            }
+        }
+
+        private static AbstractButton findCheckBoxButton(Component rendererComponent) {
+            if (rendererComponent instanceof CheckBoxListCellRenderer checkBoxRenderer) {
+                AbstractButton checkBox = checkBoxRenderer._checkBox;
+                if (isVisibleDescendant(checkBox, rendererComponent)) {
+                    return checkBox;
+                }
+            }
+
+            List<AbstractButton> buttons = new ArrayList<>();
+            collectVisibleButtons(rendererComponent, buttons);
+            return buttons.size() == 1 ? buttons.get(0) : null;
+        }
+
+        private static boolean isVisibleDescendant(Component component, Component ancestor) {
+            if (component == null) {
+                return false;
+            }
+            Component current = component;
+            while (current != ancestor) {
+                if (!current.isVisible()) {
+                    return false;
+                }
+                current = current.getParent();
+                if (current == null) {
+                    return false;
+                }
+            }
+            return ancestor.isVisible();
+        }
+
+        private static void collectVisibleButtons(Component component, List<AbstractButton> buttons) {
+            if (!component.isVisible()) {
+                return;
+            }
+            if (component instanceof AbstractButton button) {
+                buttons.add(button);
+            }
+            if (component instanceof Container container) {
+                for (Component child : container.getComponents()) {
+                    collectVisibleButtons(child, buttons);
+                }
+            }
+        }
+
+        private static Rectangle getIconBounds(AbstractButton button) {
+            if (button == null || button.getWidth() <= 0 || button.getHeight() <= 0) {
+                return null;
+            }
+
+            Icon icon = getPaintedIcon(button);
+            if (icon == null || icon.getIconWidth() <= 0 || icon.getIconHeight() <= 0) {
+                return null;
+            }
+
+            Insets insets = button.getInsets();
+            Rectangle viewBounds = new Rectangle(
+                    insets.left,
+                    insets.top,
+                    Math.max(0, button.getWidth() - insets.left - insets.right),
+                    Math.max(0, button.getHeight() - insets.top - insets.bottom));
+            Rectangle iconBounds = new Rectangle();
+            Rectangle textBounds = new Rectangle();
+            Font font = button.getFont();
+            if (font == null) {
+                font = findAncestorFont(button);
+            }
+            if (font == null) {
+                return null;
+            }
+            FontMetrics metrics = button.getFontMetrics(font);
+
+            SwingUtilities.layoutCompoundLabel(
+                    button,
+                    metrics,
+                    button.getText(),
+                    icon,
+                    button.getVerticalAlignment(),
+                    button.getHorizontalAlignment(),
+                    button.getVerticalTextPosition(),
+                    button.getHorizontalTextPosition(),
+                    viewBounds,
+                    iconBounds,
+                    textBounds,
+                    button.getIconTextGap());
+            return iconBounds;
+        }
+
+        private static Font findAncestorFont(AbstractButton button) {
+            Container parent = button.getParent();
+            while (parent != null) {
+                if (parent.getFont() != null) {
+                    return parent.getFont();
+                }
+                parent = parent.getParent();
+            }
+            return UIManager.getFont("CheckBox.font");
+        }
+
+        private static Icon getPaintedIcon(AbstractButton button) {
+            Icon icon = button.getIcon();
+            if (icon == null) {
+                if (button.getUI() instanceof BasicRadioButtonUI radioButtonUI) {
+                    icon = radioButtonUI.getDefaultIcon();
+                }
+                if (icon == null) {
+                    if (button instanceof JCheckBox) {
+                        icon = UIManager.getIcon("CheckBox.icon");
+                    }
+                }
+                return icon;
+            }
+
+            ButtonModel model = button.getModel();
+            Icon stateIcon = null;
+            if (!model.isEnabled()) {
+                stateIcon = model.isSelected()
+                        ? button.getDisabledSelectedIcon()
+                        : button.getDisabledIcon();
+            }
+            else if (model.isPressed() && model.isArmed()) {
+                stateIcon = button.getPressedIcon();
+            }
+            else if (button.isRolloverEnabled() && model.isRollover()) {
+                stateIcon = model.isSelected()
+                        ? button.getRolloverSelectedIcon()
+                        : button.getRolloverIcon();
+            }
+            else if (model.isSelected()) {
+                stateIcon = button.getSelectedIcon();
+            }
+            return stateIcon != null ? stateIcon : icon;
         }
 
         public void mouseClicked(MouseEvent e) {
@@ -245,14 +426,17 @@ public class CheckBoxList extends JList {
                 return;
             }
 
-            boolean clickInBox = clicksInCheckBox(e);
+            int index = getCellIndex(e.getPoint());
+            if (index < 0) {
+                return;
+            }
+
+            boolean clickInBox = clicksInCheckBox(e, index);
             if (!_list.isClickInCheckBoxOnly() || clickInBox) {
-                int index = _list.locationToIndex(e.getPoint());
                 toggleSelection(index);
                 if (clickInBox) {
                     Object source = e.getSource();
-                    if (source instanceof JList) {
-                        JList list = ((JList) source);
+                    if (source instanceof JList list) {
                         if (!list.hasFocus() && list.isFocusable() && list.isRequestFocusEnabled()) {
                             list.requestFocusInWindow();
                         }
@@ -479,7 +663,7 @@ public class CheckBoxList extends JList {
     /**
      * Sets the value of property clickInCheckBoxOnly.
      *
-     * @param clickInCheckBoxOnly see {@Link #isClickInCheckBoxOnly} for more information.
+     * @param clickInCheckBoxOnly see {@link #isClickInCheckBoxOnly()} for more information.
      */
     public void setClickInCheckBoxOnly(boolean clickInCheckBoxOnly) {
         if (clickInCheckBoxOnly != _clickInCheckBoxOnly) {
@@ -502,11 +686,18 @@ public class CheckBoxList extends JList {
         if (_checkBoxListSelectionModel != checkBoxListSelectionModel) {
             if (_checkBoxListSelectionModel != null) {
                 getModel().removeListDataListener(_checkBoxListSelectionModel);
+                if (_handler != null) {
+                    _checkBoxListSelectionModel.removeListSelectionListener(_handler);
+                }
             }
             _checkBoxListSelectionModel = checkBoxListSelectionModel;
             if (_checkBoxListSelectionModel != null) {
                 _checkBoxListSelectionModel.setModel(getModel());
+                if (_handler != null) {
+                    _checkBoxListSelectionModel.addListSelectionListener(_handler);
+                }
             }
+            repaint();
         }
     }
 
@@ -616,7 +807,7 @@ public class CheckBoxList extends JList {
      * @param elements sets the select elements. All the rows that have the value in the array will be checked.
      */
     public void setSelectedObjects(Object[] elements) {
-        Map<Object, String> selected = new HashMap<Object, String>();
+        Map<Object, String> selected = new HashMap<>();
         for (Object element : elements) {
             selected.put(element, "");
         }
@@ -629,7 +820,7 @@ public class CheckBoxList extends JList {
      * @param elements sets the select elements. All the rows that have the value in the Vector will be checked.
      */
     public void setSelectedObjects(Vector<?> elements) {
-        Map<Object, String> selected = new HashMap<Object, String>();
+        Map<Object, String> selected = new HashMap<>();
         for (Object element : elements) {
             selected.put(element, "");
         }
@@ -637,19 +828,15 @@ public class CheckBoxList extends JList {
     }
 
     private void setSelectedObjects(Map<Object, String> selected) {
-        List<Integer> indices = new ArrayList<Integer>();
+        int[] selectedIndices = new int[getModel().getSize()];
+        int selectedCount = 0;
         for (int i = 0; i < getModel().getSize(); i++) {
             Object elementAt = getModel().getElementAt(i);
             if (selected.get(elementAt) != null) {
-                indices.add(i);
+                selectedIndices[selectedCount++] = i;
             }
         }
-        int[] selectedIndices = new int[indices.size()];
-        for (int i = 0; i < indices.size(); i++) {
-            Integer row = indices.get(i);
-            selectedIndices[i] = row;
-        }
-        setCheckBoxListSelectedIndices(selectedIndices);
+        setCheckBoxListSelectedIndices(java.util.Arrays.copyOf(selectedIndices, selectedCount));
     }
 
     /**
@@ -721,9 +908,7 @@ public class CheckBoxList extends JList {
      *                     false
      */
     public void setCheckBoxListSelectedValue(Object anObject, boolean shouldScroll) {
-        if (anObject == null)
-            setSelectedIndex(-1);
-        else {
+        if (anObject != null) {
             int i, c;
             ListModel model = getModel();
             for (i = 0, c = model.getSize(); i < c; i++)
@@ -734,8 +919,8 @@ public class CheckBoxList extends JList {
                     repaint();  /** FIX-ME setSelectedIndex does not redraw all the time with the basic l&f**/
                     return;
                 }
-            setCheckBoxListSelectedIndex(-1);
         }
+        clearCheckBoxListSelection();
         repaint(); /** FIX-ME setSelectedIndex does not redraw all the time with the basic l&f**/
     }
 
@@ -779,7 +964,7 @@ public class CheckBoxList extends JList {
      */
     public void addCheckBoxListSelectedValues(Object[] objects) {
         if (objects != null) {
-            Map<Object, String> map = new HashMap<Object, String>();
+            Map<Object, String> map = new HashMap<>();
             for (Object o : objects) {
                 map.put(o, "");
             }
@@ -805,7 +990,7 @@ public class CheckBoxList extends JList {
      */
     public void removeCheckBoxListSelectedValues(Object[] objects) {
         if (objects != null) {
-            Map<Object, String> map = new HashMap<Object, String>();
+            Map<Object, String> map = new HashMap<>();
             for (Object o : objects) {
                 map.put(o, "");
             }

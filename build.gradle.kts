@@ -1,20 +1,17 @@
-import java.lang.Boolean.getBoolean
-
-// release version is used when building with -Drelease=true
-val releaseVersion = "3.7.15"
-val developmentVersion = "3.7.15.1-SNAPSHOT"
-
-version = if( getBoolean( "release" ) ) releaseVersion else developmentVersion
+version = "3.7.15.1-SNAPSHOT"
 
 plugins {
 	`java-library`
 	`maven-publish`
-	signing
+}
+
+repositories {
+	mavenCentral()
 }
 
 // check required Java version
-if( JavaVersion.current() < JavaVersion.VERSION_1_8 )
-	throw RuntimeException( "Java 8 or later required (running ${System.getProperty( "java.version" )})" )
+if( JavaVersion.current() < JavaVersion.VERSION_17 )
+	throw RuntimeException( "Java 17 or later required (running ${System.getProperty( "java.version" )})" )
 
 // log version, Gradle and Java versions
 println()
@@ -25,75 +22,116 @@ println( "Java ${System.getProperty( "java.version" )}" )
 println()
 
 java {
-	toolchain {
-		languageVersion.set( JavaLanguageVersion.of( 8 ) )
-	}
-
 	withSourcesJar()
 	withJavadocJar()
 }
 
 sourceSets {
-	// main code compiled with Java 8
 	main {
-		java.setSrcDirs( listOf( "src", "src-jdk8", "src-apple" ) )
+		java.setSrcDirs( listOf( "src" ) )
 		resources.setSrcDirs( listOf( "src" ) )
 
 		java.include( "**/*.java" )
-		resources.exclude( "**/*.java", "**/*.psd", "**/SwingWorker_COPYING" )
+		resources.exclude( "**/*.java", "**/*.psd" )
 	}
+	test {
+		java.setSrcDirs( listOf( "test" ) )
+	}
+}
 
-	// Java 9+ sepecific code compiled with Java 9+
-	create( "java9" ) {
-		java {
-			setSrcDirs( listOf( "src-jdk9" ) )
-		}
-	}
+val demoSourceSet = sourceSets.create( "demo" ) {
+	java.setSrcDirs( listOf( "demo" ) )
+	compileClasspath += sourceSets["main"].output
+	runtimeClasspath += sourceSets["main"].output
 }
 
 dependencies {
-	add( "java9Compile", sourceSets.main.get().output )
+	testImplementation( "com.formdev:flatlaf:3.7.2" )
+	testImplementation( "com.formdev:flatlaf-jide-oss:3.7.2" ) {
+		exclude( group = "com.formdev", module = "jide-oss" )
+	}
+	testImplementation( platform( "org.junit:junit-bom:6.1.2" ) )
+	testImplementation( "org.junit.jupiter:junit-jupiter" )
+	testRuntimeOnly( "org.junit.platform:junit-platform-launcher" )
+
+	add( demoSourceSet.implementationConfigurationName, "com.formdev:flatlaf:3.7.2" )
+	add( demoSourceSet.implementationConfigurationName, "com.formdev:flatlaf-jide-oss:3.7.2" ) {
+		exclude( group = "com.formdev", module = "jide-oss" )
+	}
 }
 
 tasks.withType<JavaCompile>().configureEach {
-	sourceCompatibility = "1.8"
-	targetCompatibility = "1.8"
-
+	options.release.set( 17 )
 	options.encoding = "ISO-8859-1"
 }
 
-tasks.named<JavaCompile>( "compileJava9Java" ) {
-	javaCompiler.set( javaToolchains.compilerFor {
-		languageVersion.set( JavaLanguageVersion.of( 9 ) )
-	} )
+tasks.test {
+	dependsOn( "flatLafLightTest", "flatLafDarkTest" )
+	useJUnitPlatform {
+		excludeTags( "flatlaf" )
+	}
+	systemProperty( "java.awt.headless", "true" )
+	jvmArgs( "--enable-native-access=ALL-UNNAMED" )
+}
 
-	sourceCompatibility = "9"
-	targetCompatibility = "9"
+fun Test.configureFlatLafTest( theme: String ) {
+	group = "verification"
+	description = "Runs Swing component tests under FlatLaf $theme mode."
+	testClassesDirs = sourceSets["test"].output.classesDirs
+	classpath = sourceSets["test"].runtimeClasspath
+	useJUnitPlatform {
+		includeTags( "flatlaf" )
+	}
+	systemProperty( "java.awt.headless", "true" )
+	systemProperty( "jide.test.flatlaf.theme", theme )
+	jvmArgs( "--enable-native-access=ALL-UNNAMED" )
+}
 
-	options.compilerArgs.addAll( listOf(
-		"--add-exports", "java.base/sun.security.action=ALL-UNNAMED",
-		"--add-exports", "java.desktop/com.sun.java.swing.plaf.windows=ALL-UNNAMED",
-		"--add-exports", "java.desktop/sun.awt.windows=ALL-UNNAMED",
-		"--add-exports", "java.desktop/sun.awt.image=ALL-UNNAMED",
-		"--add-exports", "java.desktop/sun.swing=ALL-UNNAMED"
-	) )
+tasks.register<Test>( "flatLafLightTest" ) {
+	configureFlatLafTest( "light" )
+}
+
+tasks.register<Test>( "flatLafDarkTest" ) {
+	configureFlatLafTest( "dark" )
+}
+
+tasks.register<JavaExec>( "runDemo" ) {
+	group = "application"
+	description = "Runs the interactive FlatLaf JIDE control showcase."
+	classpath = demoSourceSet.runtimeClasspath
+	mainClass.set( "com.github.derreisende77.FlatLafControlShowcase" )
+	jvmArgs( "--enable-native-access=ALL-UNNAMED" )
+}
+
+tasks.register<JavaExec>( "smokeDemo" ) {
+	group = "verification"
+	description = "Constructs the FlatLaf JIDE control showcase in headless mode."
+	classpath = demoSourceSet.runtimeClasspath
+	mainClass.set( "com.github.derreisende77.FlatLafControlShowcase" )
+	args( "--smoke" )
+	systemProperty( "java.awt.headless", "true" )
+	jvmArgs( "--enable-native-access=ALL-UNNAMED" )
+}
+
+tasks.register<JavaExec>( "renderDemoPreview" ) {
+	group = "verification"
+	description = "Renders light and dark screenshots of the control showcase."
+	classpath = demoSourceSet.runtimeClasspath
+	mainClass.set( "com.github.derreisende77.FlatLafControlShowcase" )
+	args( "--render" )
+	jvmArgs( "--enable-native-access=ALL-UNNAMED" )
 }
 
 tasks.jar {
 	manifest.attributes(
-		"Multi-Release" to "true",
 		"Implementation-Version" to project.version
 	)
 
 	exclude( "apple/**", "com/apple/**" )
-
-	into( "META-INF/versions/9" ) {
-		from( sourceSets["java9"].output )
-	}
 }
 
 tasks.named<Jar>( "sourcesJar" ) {
-	exclude( "apple/**", "com/apple/**", "README.txt" )
+	exclude( "apple/**", "com/apple/**" )
 }
 
 tasks.javadoc {
@@ -102,7 +140,6 @@ tasks.javadoc {
 		use( true )
 		addStringOption( "Xdoclint:none", "-Xdoclint:none" )
 	}
-	isFailOnError = false
 }
 
 
@@ -145,40 +182,4 @@ publishing {
 			}
 		}
 	}
-
-	repositories {
-		maven {
-			name = "OSSRH"
-
-			val releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-			val snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-			url = uri( if( getBoolean( "release" ) ) releasesRepoUrl else snapshotsRepoUrl )
-
-			credentials {
-				// get from gradle.properties
-				val ossrhUsername: String? by project
-				val ossrhPassword: String? by project
-
-				username = System.getenv( "OSSRH_USERNAME" ) ?: ossrhUsername
-				password = System.getenv( "OSSRH_PASSWORD" ) ?: ossrhPassword
-			}
-		}
-	}
-}
-
-signing {
-	// get from gradle.properties
-	val signingKey: String? by project
-	val signingPassword: String? by project
-
-	val key = System.getenv( "SIGNING_KEY" ) ?: signingKey
-	val password = System.getenv( "SIGNING_PASSWORD" ) ?: signingPassword
-
-	useInMemoryPgpKeys( key, password )
-	sign( publishing.publications["maven"] )
-}
-
-// disable signing of snapshots
-tasks.withType<Sign>().configureEach {
-	onlyIf { getBoolean( "release" ) }
 }

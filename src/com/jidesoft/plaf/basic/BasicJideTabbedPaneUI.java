@@ -11,9 +11,6 @@ import com.jidesoft.swing.JideSwingUtilities;
 import com.jidesoft.swing.JideTabbedPane;
 import com.jidesoft.swing.PartialLineBorder;
 import com.jidesoft.swing.TabColorProvider;
-import com.jidesoft.utils.SecurityUtils;
-import com.jidesoft.utils.SystemInfo;
-
 import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.event.ChangeEvent;
@@ -34,7 +31,7 @@ import java.util.*;
 import java.util.List;
 
 /**
- * A basic L&f implementation of JideTabbedPaneUI
+ * A basic look and feel implementation of JideTabbedPaneUI
  */
 public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingConstants, DocumentListener {
 
@@ -224,12 +221,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
 
     // the left margin of the first tab according to the style
     public static final int DEFAULT_LEFT_MARGIN = 0;
-    public static final int OFFICE2003_LEFT_MARGIN = 18;
-    public static final int EXCEL_LEFT_MARGIN = 6;
 
-
-    protected int _rectSizeExtend = 0;//when the style is eclipse,
-    //we should extend the size of the rects for hold the title
 
     protected Polygon tabRegion = null;
 
@@ -289,59 +281,12 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
     }
 
     public void installColorTheme() {
-        switch (getTabShape()) {
-            case JideTabbedPane.SHAPE_EXCEL:
-                _selectColor1 = _darkShadow;
-                _selectColor2 = _lightHighlight;
-                _selectColor3 = _shadow;
-                _unselectColor1 = _darkShadow;
-                _unselectColor2 = _lightHighlight;
-                _unselectColor3 = _shadow;
-                break;
-            case JideTabbedPane.SHAPE_WINDOWS:
-            case JideTabbedPane.SHAPE_WINDOWS_SELECTED:
-                _selectColor1 = _lightHighlight;
-                _selectColor2 = _shadow;
-                _selectColor3 = _defaultTabBorderShadowColor;
-                _unselectColor1 = _selectColor1;
-                _unselectColor2 = _selectColor2;
-                _unselectColor3 = _selectColor3;
-                break;
-            case JideTabbedPane.SHAPE_VSNET:
-                _selectColor1 = _shadow;
-                _selectColor2 = _shadow;
-                _unselectColor1 = _selectColor1;
-                break;
-            case JideTabbedPane.SHAPE_ROUNDED_VSNET:
-                _selectColor1 = _shadow;
-                _selectColor2 = _selectColor1;
-                _unselectColor1 = _selectColor1;
-                break;
-            case JideTabbedPane.SHAPE_FLAT:
-                _selectColor1 = _shadow;
-                _unselectColor1 = _selectColor1;
-                break;
-            case JideTabbedPane.SHAPE_ROUNDED_FLAT:
-                _selectColor1 = _shadow;
-                _selectColor2 = _shadow;
-                _unselectColor1 = _selectColor1;
-                _unselectColor2 = _selectColor2;
-                break;
-            case JideTabbedPane.SHAPE_BOX:
-                _selectColor1 = _shadow;
-                _selectColor2 = _lightHighlight;
-                _unselectColor1 = getPainter().getControlShadow();
-                _unselectColor2 = _lightHighlight;
-                break;
-            case JideTabbedPane.SHAPE_OFFICE2003:
-            default:
-                _selectColor1 = _shadow;
-                _selectColor2 = _lightHighlight;
-                _unselectColor1 = _shadow;
-                _unselectColor2 = null;
-                _unselectColor3 = null;
-        }
-
+        _selectColor1 = _shadow;
+        _selectColor2 = _lightHighlight;
+        _selectColor3 = null;
+        _unselectColor1 = getPainter().getControlShadow();
+        _unselectColor2 = _lightHighlight;
+        _unselectColor3 = null;
     }
 
     @Override
@@ -382,10 +327,9 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
         }
     }
 
-    /* In an attempt to preserve backward compatibility for programs
-     * which have extended VsnetJideTabbedPaneUI to do their own layout, the
-     * UI uses the installed layoutManager (and not tabLayoutPolicy) to
-     * determine if scrollTabLayout is enabled.
+    /*
+     * Use the installed layout manager instead of the tab layout policy so
+     * subclasses can provide their own scroll layout.
      */
 
     protected boolean scrollableTabLayoutEnabled() {
@@ -417,7 +361,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
 
     private void installTabContainer() {
         for (int i = 0; i < _tabPane.getTabCount(); i++) {
-            Component tabComponent = SystemInfo.isJdk6Above() ? _tabPane.getTabComponentAt(i) : null;
+            Component tabComponent = _tabPane.getTabComponentAt(i);
             if (tabComponent != null) {
                 if (_tabContainer == null) {
                     _tabContainer = new TabContainer();
@@ -648,7 +592,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
             _tabPane.addComponentListener(_componentListener);
         }
 
-        if (!_tabPane.isDragOverDisabled()) {
+        if (!_tabPane.isDragOverDisabled() && !GraphicsEnvironment.isHeadless()) {
             if (_dropListener == null) {
                 _dropListener = createDropListener();
                 _dt = new DropTarget(getTabPanel(), _dropListener);
@@ -1094,10 +1038,10 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
         layoutLabel(tabPlacement, metrics, tabIndex, title, icon,
                 tempTabRect, iconRect, textRect, isSelected);
 
-        if ((!_isEditing || (!isSelected)) && (!SystemInfo.isJdk6Above() || _tabPane.getTabComponentAt(tabIndex) == null))
+        if ((!_isEditing || (!isSelected)) && _tabPane.getTabComponentAt(tabIndex) == null)
             paintText(g, tabPlacement, font, metrics, tabIndex, title, textRect, isSelected);
 
-        if (!SystemInfo.isJdk6Above() || _tabPane.getTabComponentAt(tabIndex) == null) {
+        if (_tabPane.getTabComponentAt(tabIndex) == null) {
             paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
         }
 
@@ -1413,7 +1357,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                     }
                     else {
                         g2d.rotate(-Math.PI / 2);
-                        g2d.translate(-textRect.height + metrics.getHeight() / 2 + _rectSizeExtend, 0); // no idea why i need 7 here
+                        g2d.translate(-textRect.height + metrics.getHeight() / 2, 0);
                     }
                     JideSwingUtilities.drawStringUnderlineCharAt(_tabPane, g2d, actualText, mnemIndex, 0,
                             ((textRect.width - metrics.getHeight()) / 2) + metrics.getAscent());
@@ -1436,7 +1380,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                     }
                     else {
                         g2d.rotate(-Math.PI / 2);
-                        g2d.translate(-textRect.height + metrics.getHeight() / 2 + _rectSizeExtend, 0); // no idea why i need 7 here
+                        g2d.translate(-textRect.height + metrics.getHeight() / 2, 0);
                     }
                     g2d.setColor(_tabPane.getBackgroundAt(tabIndex).brighter());
                     JideSwingUtilities.drawStringUnderlineCharAt(_tabPane, g2d, actualText, mnemIndex,
@@ -1469,2238 +1413,14 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
             return;
         }
 
-        switch (getTabShape()) {
-            case JideTabbedPane.SHAPE_BOX:
-                paintBoxTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_EXCEL:
-                paintExcelTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_WINDOWS:
-                paintWindowsTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_WINDOWS_SELECTED:
-                if (isSelected) {
-                    paintWindowsTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                }
-                break;
-            case JideTabbedPane.SHAPE_VSNET:
-                paintVsnetTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_ROUNDED_VSNET:
-                paintRoundedVsnetTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_FLAT:
-                paintFlatTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_ROUNDED_FLAT:
-                paintRoundedFlatTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_OFFICE2003:
-            default:
-                paintOffice2003TabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-        }
-
-        int tabShape = getTabShape();
-        if (tabShape == JideTabbedPane.SHAPE_WINDOWS) {
-            if (_mouseEnter && _tabPane.getColorTheme() == JideTabbedPane.COLOR_THEME_WINXP
-                    && tabIndex == _indexMouseOver && !isSelected && _tabPane.isEnabledAt(_indexMouseOver)) {
-                paintTabBorderMouseOver(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-            }
-        }
-        else if (tabShape == JideTabbedPane.SHAPE_WINDOWS_SELECTED) {
-            if (_mouseEnter && tabIndex == _indexMouseOver && !isSelected && _tabPane.isEnabledAt(_indexMouseOver)) {
-                paintTabBorderMouseOver(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-            }
-        }
-    }
-
-    protected void paintOffice2003TabBorder(Graphics g, int tabPlacement, int tabIndex,
-                                            int x, int y, int w, int h, boolean isSelected) {
-        boolean leftToRight = _tabPane.getComponentOrientation().isLeftToRight();
-
-        switch (tabPlacement) {
-            case LEFT:// when the tab on the left
-                y += 2;
-                if (isSelected) {// the tab is selected
-                    g.setColor(_selectColor1);
-
-                    g.drawLine(x, y + 3, x, y + h - 5);// left
-                    g.drawLine(x + 1, y + h - 4, x + 1, y + h - 4);// bottom
-                    // arc
-                    g.drawLine(x + 2, y + h - 3, x + w - 1, y + h - 3);// bottom
-
-                    g.drawLine(x + 1, y + 2, x + 1, y + 1);// top arc
-                    g.drawLine(x + 2, y, x + 2, y - 1);
-
-                    for (int i = 0; i < w - 4; i++) {// top
-                        g.drawLine(x + 3 + i, y - 2 - i, x + 3 + i, y - 2 - i);
-                    }
-
-                    g.drawLine(x + w - 1, y - w + 1, x + w - 1, y - w + 2);
-
-                    g.setColor(_selectColor2);
-
-                    g.drawLine(x + 1, y + 3, x + 1, y + h - 5);// left
-                    g.drawLine(x + 2, y + h - 4, x + w - 1, y + h - 4);// bottom
-
-                    g.drawLine(x + 2, y + 2, x + 2, y + 1);// top arc
-                    g.drawLine(x + 3, y, x + 3, y - 1);
-
-                    for (int i = 0; i < w - 4; i++) {// top
-                        g.drawLine(x + 4 + i, y - 2 - i, x + 4 + i, y - 2 - i);
-                    }
-
-                }
-                else {
-                    if (tabIndex == 0) {
-                        g.setColor(_unselectColor1);
-
-                        g.drawLine(x, y + 3, x, y + h - 5);// left
-                        g.drawLine(x + 1, y + h - 4, x + 1, y + h - 4);// bottom
-                        // arc
-                        g.drawLine(x + 2, y + h - 3, x + w - 1, y + h - 3);// bottom
-
-                        g.drawLine(x + 1, y + 2, x + 1, y + 1);// top arc
-                        g.drawLine(x + 2, y, x + 2, y - 1);
-
-                        for (int i = 0; i < w - 4; i++) {// top
-                            g.drawLine(x + 3 + i, y - 2 - i, x + 3 + i, y - 2 - i);
-                        }
-
-                        g.drawLine(x + w - 1, y - w + 1, x + w - 1, y - w + 2);
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-
-                            g.drawLine(x + 1, y + 3, x + 1, y + h - 6);// left
-
-                            g.drawLine(x + 2, y + 2, x + 2, y + 1);// top arc
-                            g.drawLine(x + 3, y, x + 3, y - 1);
-
-                            for (int i = 0; i < w - 4; i++) {// top
-                                g.drawLine(x + 4 + i, y - 2 - i, x + 4 + i, y - 2 - i);
-                            }
-
-                            g.setColor(getPainter().getControlDk());
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-
-                            g.drawLine(x + 2, y + h - 4, x + w - 1, y + h - 4);// bottom
-                            g.drawLine(x + 1, y + h - 5, x + 1, y + h - 5);// bottom
-                            // arc
-                        }
-                    }
-                    else {
-                        g.setColor(_unselectColor1);
-
-                        g.drawLine(x, y + 3, x, y + h - 5);// left
-                        g.drawLine(x + 1, y + h - 4, x + 1, y + h - 4);// bottom
-                        // arc
-                        g.drawLine(x + 2, y + h - 3, x + w - 1, y + h - 3);// bottom
-
-                        g.drawLine(x + 1, y + 2, x + 1, y + 1);// top arc
-                        g.drawLine(x + 2, y, x + 2, y - 1);
-                        g.drawLine(x + 3, y - 2, x + 3, y - 2);
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-
-                            g.drawLine(x + 1, y + 3, x + 1, y + h - 6);// left
-
-                            g.drawLine(x + 2, y + 2, x + 2, y + 1);// top arc
-                            g.drawLine(x + 3, y, x + 3, y - 1);
-                            g.drawLine(x + 4, y - 2, x + 4, y - 2);
-
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-
-                            g.drawLine(x + 2, y + h - 4, x + w - 1, y + h - 4);// bottom
-                            g.drawLine(x + 1, y + h - 5, x + 1, y + h - 5);
-                        }
-                    }
-                }
-                break;
-            case RIGHT:
-                if (isSelected) {// the tab is selected
-                    g.setColor(_selectColor1);
-
-                    g.drawLine(x + w - 1, y + 5, x + w - 1, y + h - 3);// right
-                    g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);// bottom
-                    // arc
-                    g.drawLine(x + w - 3, y + h - 1, x, y + h - 1);// bottom
-
-                    g.drawLine(x + w - 2, y + 4, x + w - 2, y + 3);// top arc
-                    g.drawLine(x + w - 3, y + 2, x + w - 3, y + 1);// top arc
-
-                    for (int i = 0; i < w - 4; i++) {// top
-                        g.drawLine(x + w - 4 - i, y - i, x + w - 4 - i, y - i);
-                    }
-
-                    g.drawLine(x, y - w + 3, x, y - w + 4);
-
-                    g.setColor(_selectColor2);
-
-                    g.drawLine(x + w - 2, y + 5, x + w - 2, y + h - 3);// right
-                    g.drawLine(x + w - 3, y + h - 2, x, y + h - 2);// bottom
-
-                    g.drawLine(x + w - 3, y + 4, x + w - 3, y + 3);// top arc
-                    g.drawLine(x + w - 4, y + 2, x + w - 4, y + 1);
-
-                    for (int i = 0; i < w - 4; i++) {// top
-                        g.drawLine(x + w - 5 - i, y - i, x + w - 5 - i, y - i);
-                    }
-                }
-                else {
-                    if (tabIndex == 0) {
-                        g.setColor(_unselectColor1);
-
-                        g.drawLine(x + w - 1, y + 5, x + w - 1, y + h - 3);// right
-                        g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);// bottom
-                        // arc
-                        g.drawLine(x + w - 3, y + h - 1, x, y + h - 1);// bottom
-
-                        g.drawLine(x + w - 2, y + 4, x + w - 2, y + 3);// top arc
-                        g.drawLine(x + w - 3, y + 2, x + w - 3, y + 1);// top arc
-
-                        for (int i = 0; i < w - 4; i++) {// top
-                            g.drawLine(x + w - 4 - i, y - i, x + w - 4 - i, y - i);
-                        }
-
-                        g.drawLine(x, y - w + 3, x, y - w + 4);
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-
-                            g.drawLine(x + w - 2, y + 5, x + w - 2, y + h - 4);// right
-
-                            g.drawLine(x + w - 3, y + 4, x + w - 3, y + 3);// top
-                            // arc
-                            g.drawLine(x + w - 4, y + 2, x + w - 4, y + 1);
-
-                            for (int i = 0; i < w - 4; i++) {// top
-                                g.drawLine(x + w - 5 - i, y - i, x + w - 5 - i, y
-                                        - i);
-                            }
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-
-                            g.drawLine(x + w - 2, y + h - 3, x + w - 2, y + h - 3);// bottom
-                            // arc
-                            g.drawLine(x + w - 3, y + h - 2, x, y + h - 2);// bottom
-
-                        }
-                    }
-                    else {
-                        g.setColor(_unselectColor1);
-
-                        g.drawLine(x + w - 1, y + 5, x + w - 1, y + h - 3);// right
-                        g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);// bottom
-                        // arc
-                        g.drawLine(x + w - 3, y + h - 1, x, y + h - 1);// bottom
-
-                        g.drawLine(x + w - 2, y + 4, x + w - 2, y + 3);// top arc
-                        g.drawLine(x + w - 3, y + 2, x + w - 3, y + 1);// top arc
-                        g.drawLine(x + w - 4, y, x + w - 4, y);// top arc
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-
-                            g.drawLine(x + w - 2, y + 5, x + w - 2, y + h - 4);// right
-
-                            g.drawLine(x + w - 3, y + 4, x + w - 3, y + 3);// top
-                            // arc
-                            g.drawLine(x + w - 4, y + 2, x + w - 4, y + 1);
-                            g.drawLine(x + w - 5, y, x + w - 5, y);
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-
-                            g.drawLine(x + w - 2, y + h - 3, x + w - 2, y + h - 3);// bottom
-                            // arc
-                            g.drawLine(x + w - 3, y + h - 2, x, y + h - 2);// bottom
-                        }
-                    }
-                }
-                break;
-            case BOTTOM:
-                if (leftToRight) {
-                    if (isSelected) {// the tab is selected
-                        g.setColor(_selectColor1);
-
-                        g.drawLine(x + w - 1, y + h - 3, x + w - 1, y);// right
-
-                        g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);// right
-                        // arc
-
-                        g.drawLine(x + 5, y + h - 1, x + w - 3, y + h - 1);// bottom
-
-                        g.drawLine(x + 3, y + h - 2, x + 4, y + h - 2);// left arc
-                        g.drawLine(x + 1, y + h - 3, x + 2, y + h - 3);// left arc
-                        g.drawLine(x, y + h - 4, x, y + h - 4);// left arc
-
-                        // left
-                        for (int i = 3; i < h - 2; i++) {
-                            g.drawLine(x + 2 - i, y + h - 2 - i, x + 2 - i, y + h
-                                    - 2 - i);
-                        }
-
-                        g.drawLine(x - h + 3, y, x - h + 4, y);
-
-                        g.setColor(_selectColor2);
-
-                        g.drawLine(x + 5, y + h - 2, x + w - 3, y + h - 2);// bottom
-
-                        g.drawLine(x + w - 2, y, x + w - 2, y + h - 3);// right
-
-                        g.drawLine(x + 3, y + h - 3, x + 4, y + h - 3);// left arc
-                        g.drawLine(x + 1, y + h - 4, x + 2, y + h - 4);// left arc
-                        g.drawLine(x, y + h - 5, x, y + h - 5);// left arc
-
-                        for (int i = 3; i < h - 2; i++) {// left
-                            g.drawLine(x + 2 - i, y + h - 3 - i, x + 2 - i, y + h
-                                    - 3 - i);
-                        }
-
-                    }
-                    else {
-                        if (tabIndex == 0) {
-                            g.setColor(_unselectColor1);
-
-                            g.drawLine(x + w - 1, y + h - 3, x + w - 1, y);// right
-
-                            g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);// right
-                            // arc
-
-                            g.drawLine(x + 5, y + h - 1, x + w - 3, y + h - 1);// bottom
-
-                            g.drawLine(x + 3, y + h - 2, x + 4, y + h - 2);// left arc
-                            g.drawLine(x + 1, y + h - 3, x + 2, y + h - 3);// left arc
-                            g.drawLine(x, y + h - 4, x, y + h - 4);// left arc
-
-                            // left
-                            for (int i = 3; i < h - 2; i++) {
-                                g.drawLine(x + 2 - i, y + h - 2 - i, x + 2 - i, y + h
-                                        - 2 - i);
-                            }
-
-                            g.drawLine(x - h + 3, y, x - h + 4, y);
-
-                            if (_unselectColor2 != null) {
-                                g.setColor(_unselectColor2);
-
-                                g.drawLine(x + 3, y + h - 3, x + 4, y + h - 3);// left
-                                // arc
-                                g.drawLine(x + 1, y + h - 4, x + 2, y + h - 4);// left
-                                // arc
-                                g.drawLine(x, y + h - 5, x, y + h - 5);// left arc
-
-                                // left
-                                for (int i = 3; i < h - 2; i++) {
-                                    g.drawLine(x + 2 - i, y + h - 3 - i, x + 2 - i, y
-                                            + h - 3 - i);
-                                }
-
-                                g.drawLine(x + 5, y + h - 2, x + w - 4, y + h - 2);// bottom
-
-                            }
-
-                            if (_unselectColor3 != null) {
-                                g.setColor(_unselectColor3);
-
-                                g.drawLine(x + w - 3, y + h - 2, x + w - 3, y + h - 2);
-                                g.drawLine(x + w - 2, y + h - 3, x + w - 2, y);// right
-                            }
-                        }
-                        else {
-                            g.setColor(_unselectColor1);
-
-                            g.drawLine(x + 5, y + h - 1, x + w - 3, y + h - 1);// bottom
-
-                            g.drawLine(x + w - 1, y + h - 3, x + w - 1, y);// right
-
-                            g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);// right
-                            // arc
-
-                            g.drawLine(x + 3, y + h - 2, x + 4, y + h - 2);// left arc
-                            g.drawLine(x + 1, y + h - 3, x + 2, y + h - 3);// left arc
-                            g.drawLine(x, y + h - 4, x, y + h - 4);// left arc
-
-                            if (_unselectColor2 != null) {
-                                g.setColor(_unselectColor2);
-
-                                g.drawLine(x + 3, y + h - 3, x + 4, y + h - 3);// left
-                                // arc
-                                g.drawLine(x + 1, y + h - 4, x + 2, y + h - 4);// left
-                                // arc
-                                g.drawLine(x, y + h - 5, x, y + h - 5);// left arc
-
-                                g.drawLine(x + 5, y + h - 2, x + w - 4, y + h - 2);// bottom
-                            }
-
-                            if (_unselectColor3 != null) {
-                                g.setColor(_unselectColor3);
-
-                                g.drawLine(x + w - 3, y + h - 2, x + w - 3, y + h - 2);
-                                g.drawLine(x + w - 2, y + h - 3, x + w - 2, y);// right
-                            }
-                        }
-                    }
-                }
-                else {
-                    if (isSelected) {// the tab is selected
-                        g.setColor(_selectColor1);
-
-                        g.drawLine(x, y + h - 3, x, y);// left
-
-                        g.drawLine(x + 1, y + h - 2, x + 1, y + h - 2);// left
-                        // arc
-
-                        g.drawLine(x + w - 6, y + h - 1, x + 2, y + h - 1);// bottom
-
-                        g.drawLine(x + w - 4, y + h - 2, x + w - 5, y + h - 2);// right arc
-                        g.drawLine(x + w - 2, y + h - 3, x + w - 3, y + h - 3);// right arc
-                        g.drawLine(x + w - 1, y + h - 4, x + w - 1, y + h - 4);// right arc
-
-                        // right
-                        for (int i = 3; i < h - 2; i++) {
-                            g.drawLine(x + w - 3 + i, y + h - 2 - i, x + w - 3 + i, y + h - 2 - i);
-                        }
-
-                        g.drawLine(x + w - 4 + h, y, x + w - 5 + h, y);
-
-                        g.setColor(_selectColor2);
-
-                        g.drawLine(x + w - 6, y + h - 2, x + 2, y + h - 2);// bottom
-
-                        g.drawLine(x + 1, y, x + 1, y + h - 3);// left
-
-                        g.drawLine(x + w - 4, y + h - 3, x + w - 5, y + h - 3);// right arc
-                        g.drawLine(x + w - 2, y + h - 4, x + w - 3, y + h - 4);// right arc
-                        g.drawLine(x + w - 1, y + h - 5, x + w - 1, y + h - 5);// right arc
-
-                        for (int i = 3; i < h - 2; i++) {// right
-                            g.drawLine(x + w - 3 + i, y + h - 3 - i, x + w - 3 + i, y + h - 3 - i);
-                        }
-                    }
-                    else {
-                        if (tabIndex == 0) {
-                            g.setColor(_unselectColor1);
-
-                            g.drawLine(x, y + h - 3, x, y);// left
-
-                            g.drawLine(x + 1, y + h - 2, x + 1, y + h - 2);// left
-                            // arc
-
-                            g.drawLine(x + w - 6, y + h - 1, x + 2, y + h - 1);// bottom
-
-                            g.drawLine(x + w - 4, y + h - 2, x + w - 5, y + h - 2);// right arc
-                            g.drawLine(x + w - 2, y + h - 3, x + w - 3, y + h - 3);// right arc
-                            g.drawLine(x + w - 1, y + h - 4, x + w - 1, y + h - 4);// right arc
-
-                            // right
-                            for (int i = 3; i < h - 2; i++) {
-                                g.drawLine(x + w - 3 + i, y + h - 2 - i, x + w - 3 + i, y + h - 2 - i);
-                            }
-
-                            g.drawLine(x + w - 4 + h, y, x + w - 5 + h, y);
-
-                            if (_unselectColor2 != null) {
-                                g.setColor(_unselectColor2);
-
-                                g.drawLine(x + w - 4, y + h - 3, x + w - 5, y + h - 3);// right
-                                // arc
-                                g.drawLine(x + w - 2, y + h - 4, x + w - 3, y + h - 4);// right
-                                // arc
-                                g.drawLine(x + w - 1, y + h - 5, x + w - 1, y + h - 5);// right arc
-
-                                // right
-                                for (int i = 3; i < h - 2; i++) {
-                                    g.drawLine(x + w - 3 + i, y + h - 3 - i, x + w - 3 + i, y + h - 3 - i);
-                                }
-
-                                g.drawLine(x + w - 6, y + h - 2, x + 3, y + h - 2);// bottom
-                            }
-
-                            if (_unselectColor3 != null) {
-                                g.setColor(_unselectColor3);
-
-                                g.drawLine(x + 2, y + h - 2, x + 2, y + h - 2);
-                                g.drawLine(x + 1, y + h - 3, x + 1, y);// left
-                            }
-                        }
-                        else {
-                            g.setColor(_unselectColor1);
-
-                            g.drawLine(x + w - 6, y + h - 1, x + 2, y + h - 1);// bottom
-
-                            g.drawLine(x, y + h - 3, x, y);// left
-
-                            g.drawLine(x + 1, y + h - 2, x + 1, y + h - 2);// left
-                            // arc
-
-                            g.drawLine(x + w - 4, y + h - 2, x + w - 5, y + h - 2);// right arc
-                            g.drawLine(x + w - 2, y + h - 3, x + w - 3, y + h - 3);// right arc
-                            g.drawLine(x + w - 1, y + h - 4, x + w - 1, y + h - 4);// right arc
-
-                            if (_unselectColor2 != null) {
-                                g.setColor(_unselectColor2);
-
-                                g.drawLine(x + w - 4, y + h - 3, x + w - 5, y + h - 3);// right
-                                // arc
-                                g.drawLine(x + w - 2, y + h - 4, x + w - 3, y + h - 4);// right
-                                // arc
-                                g.drawLine(x + w - 1, y + h - 5, x + w - 1, y + h - 5);// right arc
-
-                                g.drawLine(x + w - 6, y + h - 2, x + 3, y + h - 2);// bottom
-                            }
-
-                            if (_unselectColor3 != null) {
-                                g.setColor(_unselectColor3);
-
-                                g.drawLine(x + 2, y + h - 2, x + 2, y + h - 2);
-                                g.drawLine(x + 1, y + h - 3, x + 1, y);// left
-                            }
-                        }
-                    }
-                }
-                break;
-            case TOP:
-            default:
-                if (leftToRight) {
-                    if (isSelected) {// the tab is selected
-                        g.setColor(_selectColor1);
-
-                        g.drawLine(x + 3, y + 1, x + 4, y + 1);// left arc
-                        g.drawLine(x + 1, y + 2, x + 2, y + 2);// left arc
-                        g.drawLine(x, y + 3, x, y + 3);
-
-                        g.drawLine(x + 5, y, x + w - 3, y);// top
-
-                        g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);// right arc
-
-                        g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 1);// right
-
-                        // left
-                        for (int i = 3; i < h - 2; i++) {
-                            g.drawLine(x + 2 - i, y + 1 + i, x + 2 - i, y + 1 + i);
-                        }
-                        g.drawLine(x - h + 3, y + h - 1, x - h + 4, y + h - 1);
-
-                        g.setColor(_selectColor2);
-
-                        g.drawLine(x + 3, y + 2, x + 4, y + 2);// left arc
-                        g.drawLine(x + 1, y + 3, x + 2, y + 3);// left arc
-                        g.drawLine(x, y + 4, x, y + 4);
-
-                        g.drawLine(x + 5, y + 1, x + w - 3, y + 1);// top
-
-                        g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 1);// right
-
-                        // left
-                        for (int i = 3; i < h - 2; i++) {
-                            g.drawLine(x + 2 - i, y + 2 + i, x + 2 - i, y + 2 + i);
-                        }
-                    }
-                    else {
-                        if (tabIndex == 0) {
-                            g.setColor(_unselectColor1);
-
-                            g.drawLine(x + 3, y + 1, x + 4, y + 1);// left arc
-                            g.drawLine(x + 1, y + 2, x + 2, y + 2);// left arc
-                            g.drawLine(x, y + 3, x, y + 3);
-
-                            g.drawLine(x + 5, y, x + w - 3, y);// top
-
-                            g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);// right arc
-
-                            g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 1);// right
-
-                            // left
-                            for (int i = 3; i < h - 2; i++) {
-                                g.drawLine(x + 2 - i, y + 1 + i, x + 2 - i, y + 1 + i);
-                            }
-                            g.drawLine(x - h + 3, y + h - 1, x - h + 4, y + h - 1);
-
-                            if (_unselectColor2 != null) {
-                                g.setColor(_unselectColor2);
-
-                                g.drawLine(x + 3, y + 2, x + 4, y + 2);// left arc
-                                g.drawLine(x + 1, y + 3, x + 2, y + 3);// left arc
-                                g.drawLine(x, y + 4, x, y + 4);
-
-                                // left
-                                for (int i = 3; i < h - 2; i++) {
-                                    g.drawLine(x + 2 - i, y + 2 + i, x + 2 - i, y + 2
-                                            + i);
-                                }
-
-                                g.drawLine(x + 5, y + 1, x + w - 4, y + 1);// top
-                            }
-
-                            if (_unselectColor3 != null) {
-                                g.setColor(_unselectColor3);
-
-                                g.drawLine(x + w - 3, y + 1, x + w - 3, y + 1);
-                                g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 1);// right
-                            }
-                        }
-                        else {
-                            g.setColor(_unselectColor1);
-
-                            g.drawLine(x + 3, y + 1, x + 4, y + 1);// left arc
-                            g.drawLine(x + 1, y + 2, x + 2, y + 2);// left arc
-                            g.drawLine(x, y + 3, x, y + 3);
-
-                            g.drawLine(x + 5, y, x + w - 3, y);// top
-
-                            g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);// right arc
-
-                            g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 1);// right
-
-                            if (_unselectColor2 != null) {
-                                g.setColor(_unselectColor2);
-
-                                g.drawLine(x + 3, y + 2, x + 4, y + 2);// left arc
-                                g.drawLine(x + 1, y + 3, x + 2, y + 3);// left arc
-                                g.drawLine(x, y + 4, x, y + 4);
-
-                                g.drawLine(x + 5, y + 1, x + w - 4, y + 1);// top
-                            }
-
-                            if (_unselectColor3 != null) {
-                                g.setColor(_unselectColor3);
-
-                                g.drawLine(x + w - 3, y + 1, x + w - 3, y + 1);
-                                g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 1);// right
-                            }
-                        }
-                    }
-                }
-                else {
-                    if (isSelected) {// the tab is selected
-                        g.setColor(_selectColor1);
-
-                        g.drawLine(x + w - 4, y + 1, x + w - 5, y + 1);// right arc
-                        g.drawLine(x + w - 2, y + 2, x + w - 3, y + 2);// right arc
-                        g.drawLine(x + w - 1, y + 3, x + w - 1, y + 3);
-
-                        g.drawLine(x + w - 6, y, x + 2, y);// top
-
-                        g.drawLine(x + 1, y + 1, x + 1, y + 1);// left arc
-
-                        g.drawLine(x, y + 2, x, y + h - 1);// left
-
-                        // right
-                        for (int i = 3; i < h - 2; i++) {
-                            g.drawLine(x + w - 3 + i, y + 1 + i, x + w - 3 + i, y + 1 + i);
-                        }
-                        g.drawLine(x + w - 4 + h, y + h - 1, x + w - 5 + h, y + h - 1);
-
-                        g.setColor(_selectColor2);
-
-                        g.drawLine(x + w - 4, y + 2, x + w - 5, y + 2);// right arc
-                        g.drawLine(x + w - 2, y + 3, x + w - 3, y + 3);// right arc
-                        g.drawLine(x + w - 1, y + 4, x + w - 1, y + 4);
-
-                        g.drawLine(x + w - 6, y + 1, x + 2, y + 1);// top
-
-                        g.drawLine(x + 1, y + 2, x + 1, y + h - 1);// right
-
-                        // right
-                        for (int i = 3; i < h - 2; i++) {
-                            g.drawLine(x + w - 3 + i, y + 2 + i, x + w - 3 + i, y + 2 + i);
-                        }
-                    }
-                    else {
-                        if (tabIndex == 0) {
-                            g.setColor(_unselectColor1);
-
-                            g.drawLine(x + w - 4, y + 1, x + w - 5, y + 1);// right arc
-                            g.drawLine(x + w - 2, y + 2, x + w - 3, y + 2);// right arc
-                            g.drawLine(x + w - 1, y + 3, x + w - 1, y + 3);
-
-                            g.drawLine(x + w - 6, y, x + 2, y);// top
-
-                            g.drawLine(x + 1, y + 1, x + 1, y + 1);// left arc
-
-                            g.drawLine(x, y + 2, x, y + h - 1);// left
-
-                            // right
-                            for (int i = 3; i < h - 2; i++) {
-                                g.drawLine(x + w - 3 + i, y + 1 + i, x + w - 3 + i, y + 1 + i);
-                            }
-                            g.drawLine(x + w - 4 + h, y + h - 1, x + w - 5 + h, y + h - 1);//
-
-                            if (_unselectColor2 != null) {
-                                g.setColor(_unselectColor2);
-
-                                g.drawLine(x + w - 4, y + 2, x + w - 5, y + 2);// right arc
-                                g.drawLine(x + w - 2, y + 3, x + w - 3, y + 3);// right arc
-                                g.drawLine(x + w - 1, y + 4, x + w - 1, y + 4);
-
-                                // right
-                                for (int i = 3; i < h - 2; i++) {
-                                    g.drawLine(x + w - 3 + i, y + 2 + i, x + w - 3 + i, y + 2 + i);
-                                }
-
-                                g.drawLine(x + w - 6, y + 1, x + 3, y + 1);// top
-                            }
-
-                            if (_unselectColor3 != null) {
-                                g.setColor(_unselectColor3);
-
-                                g.drawLine(x + 2, y + 1, x + 2, y + 1);
-                                g.drawLine(x + 1, y + 2, x + 1, y + h - 1);// left
-                            }
-                        }
-                        else {
-                            g.setColor(_unselectColor1);
-
-                            g.drawLine(x + w - 4, y + 1, x + w - 5, y + 1);// right arc
-                            g.drawLine(x + w - 2, y + 2, x + w - 3, y + 2);// right arc
-                            g.drawLine(x + w - 1, y + 3, x + w - 1, y + 3);
-
-                            g.drawLine(x + w - 6, y, x + 2, y);// top
-
-                            g.drawLine(x + 1, y + 1, x + 1, y + 1);// left arc
-
-                            g.drawLine(x, y + 2, x, y + h - 1);// left
-
-                            if (_unselectColor2 != null) {
-                                g.setColor(_unselectColor2);
-
-                                g.drawLine(x + w - 4, y + 2, x + w - 5, y + 2);// right arc
-                                g.drawLine(x + w - 2, y + 3, x + w - 3, y + 3);// right arc
-                                g.drawLine(x + w - 1, y + 4, x + w - 1, y + 4);
-
-                                g.drawLine(x + w - 6, y + 1, x + 3, y + 1);// top
-                            }
-
-                            if (_unselectColor3 != null) {
-                                g.setColor(_unselectColor3);
-
-                                g.drawLine(x + 2, y + 1, x + 2, y + 1);
-                                g.drawLine(x + 1, y + 2, x + 1, y + h - 1);// left
-                            }
-                        }
-                    }
-                }
-        }
-
+        paintBoxTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
     }
 
 
-    protected void paintExcelTabBorder(Graphics g, int tabPlacement, int tabIndex,
-                                       int x, int y, int w, int h, boolean isSelected) {
-        boolean leftToRight = _tabPane.getComponentOrientation().isLeftToRight();
-        switch (tabPlacement) {
-            case LEFT:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y + 5, x, y + h - 5);// left
-                    for (int i = 0, j = 0; i < w / 2 + 1; i++, j = j + 2) {// top
-                        g.drawLine(x + 1 + j, y + 4 - i, x + 2 + j, y + 4 - i);
-                    }
-                    for (int i = 0, j = 0; i < w / 2 + 1; i++, j = j + 2) {// bottom
-                        g.drawLine(x + j, y + h - 4 + i, x + 1 + j, y + h - 4 + i);
-                    }
 
-                    if (_selectColor2 != null) {
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + 1, y + 6, x + 1, y + h - 6);// left
-                        for (int i = 0, j = 0; i < w / 2 + 1; i++, j = j + 2) {// top
-                            g.drawLine(x + 1 + j, y + 5 - i, x + 2 + j, y + 5 - i);
-                        }
-                    }
 
-                    if (_selectColor3 != null) {
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + 1, y + h - 5, x + 1, y + h - 5);// a point
-                        for (int i = 0, j = 0; i < w / 2 + 1; i++, j = j + 2) {// bottom
-                            g.drawLine(x + 2 + j, y + h - 4 + i, x + 3 + j, y + h - 4 + i);
-                        }
-                    }
-                }
-                else {
-                    if (tabIndex == 0) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x, y + 5, x, y + h - 5);// left
-                        for (int i = 0, j = 0; i < w / 2 + 1; i++, j = j + 2) {// top
-                            g.drawLine(x + 1 + j, y + 4 - i, x + 2 + j, y + 4 - i);
-                        }
 
-                        for (int i = 0, j = 0; i < w / 2 + 1; i++, j = j + 2) {// bottom
-                            g.drawLine(x + j, y + h - 4 + i, x + 1 + j, y + h - 4 + i);
-                        }
 
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + 1, y + 6, x + 1, y + h - 6);// left
-                            for (int i = 0, j = 0; i < w / 2; i++, j = j + 2) {// top
-                                g.drawLine(x + 1 + j, y + 5 - i, x + 2 + j, y + 5 - i);
-                            }
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + 1, y + h - 5, x + 1, y + h - 5);// a point
-                            for (int i = 0, j = 0; i < w / 2 + 1; i++, j = j + 2) {// bottom
-                                g.drawLine(x + 2 + j, y + h - 4 + i, x + 3 + j, y + h - 4 + i);
-                            }
-                        }
-                    }
-                    else if (tabIndex == _tabPane.getSelectedIndex() - 1) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x, y + 5, x, y + h - 5);// left
-                        for (int i = 0, j = 0; i < 4; i++, j = j + 2) {// top
-                            g.drawLine(x + 1 + j, y + 4 - i, x + 2 + j, y + 4 - i);
-                        }
-
-                        for (int i = 0, j = 0; i < 5; i++, j = j + 2) {// bottom
-                            g.drawLine(x + j, y + h - 4 + i, x + 1 + j, y + h - 4 + i);
-                        }
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + 1, y + 6, x + 1, y + h - 6);// left
-                            for (int i = 0, j = 0; i < 4; i++, j = j + 2) {// top
-                                g.drawLine(x + 1 + j, y + 5 - i, x + 2 + j, y + 5 - i);
-                            }
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + 1, y + h - 5, x + 1, y + h - 5);// a point
-                            for (int i = 0, j = 0; i < 5; i++, j = j + 2) {// bottom
-                                g.drawLine(x + 2 + j, y + h - 4 + i, x + 3 + j, y + h - 4 + i);
-                            }
-                        }
-                    }
-                    else if (tabIndex != _tabPane.getSelectedIndex() - 1) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x, y + 5, x, y + h - 5);// left
-                        for (int i = 0, j = 0; i < 4; i++, j = j + 2) {// top
-                            g.drawLine(x + 1 + j, y + 4 - i, x + 2 + j, y + 4 - i);
-                        }
-                        for (int i = 0, j = 0; i < w / 2 + 1; i++, j = j + 2) {// bottom
-                            g.drawLine(x + j, y + h - 4 + i, x + 1 + j, y + h - 4 + i);
-                        }
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + 1, y + 6, x + 1, y + h - 6);// left
-                            for (int i = 0, j = 0; i < 4; i++, j = j + 2) {// top
-                                g.drawLine(x + 1 + j, y + 5 - i, x + 2 + j, y + 5 - i);
-                            }
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + 1, y + h - 5, x + 1, y + h - 5);// a point
-                            for (int i = 0, j = 0; i < w / 2 + 1; i++, j = j + 2) {// bottom
-                                g.drawLine(x + 2 + j, y + h - 4 + i, x + 3 + j, y + h - 4 + i);
-                            }
-                        }
-                    }
-                }
-                break;
-            case RIGHT:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x + w - 1, y + 5, x + w - 1, y + h - 5);// right
-                    for (int i = 0, j = 0; i < w / 2 + 1; i++, j += 2) {// top
-                        g.drawLine(x + w - 2 - j, y + 4 - i, x + w - 3 - j, y + 4 - i);
-                    }
-                    for (int i = 0, j = 0; i < w / 2 + 1; i++, j += 2) {// bottom
-                        g.drawLine(x + w - 1 - j, y + h - 4 + i, x + w - 2 - j, y + h - 4 + i);
-                    }
-
-                    if (_selectColor2 != null) {
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + w - 2, y + 6, x + w - 2, y + h - 6);// right
-                        for (int i = 0, j = 0; i < w / 2 + 1; i++, j += 2) {// top
-                            g.drawLine(x + w - 2 - j, y + 5 - i, x + w - 3 - j, y + 5 - i);
-                        }
-                    }
-
-                    if (_selectColor3 != null) {
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + w - 2, y + h - 5, x + w - 2, y + h - 5);// a point
-                        for (int i = 0, j = 0; i < w / 2 + 1; i++, j += 2) {// bottom
-                            g.drawLine(x + w - 3 - j, y + h - 4 + i, x + w - 4 - j, y + h - 4 + i);
-                        }
-                    }
-                }
-                else {
-                    if (tabIndex == 0) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x + w - 1, y + 5, x + w - 1, y + h - 5);// right
-                        for (int i = 0, j = 0; i < w / 2 + 1; i++, j += 2) {// top
-                            g.drawLine(x + w - 2 - j, y + 4 - i, x + w - 3 - j, y + 4 - i);
-                        }
-
-                        for (int i = 0, j = 0; i < w / 2 + 1; i++, j += 2) {// bottom
-                            g.drawLine(x + w - 1 - j, y + h - 4 + i, x + w - 2 - j, y + h - 4 + i);
-                        }
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + w - 2, y + 6, x + w - 2, y + h - 6);// right
-
-                            for (int i = 0, j = 0; i < w / 2 + 1; i++, j += 2) {// top
-                                g.drawLine(x + w - 2 - j, y + 5 - i, x + w - 3 - j, y + 5 - i);
-                            }
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-
-                            g.drawLine(x + w - 2, y + h - 5, x + w - 2, y + h - 5);// a
-                            // point
-
-                            for (int i = 0, j = 0; i < w / 2 + 1; i++, j += 2) {// bottom
-                                g.drawLine(x + w - 3 - j, y + h - 4 + i, x + w - 4 - j, y + h - 4 + i);
-                            }
-                        }
-                    }
-                    else if (tabIndex == _tabPane.getSelectedIndex() - 1) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x + w - 1, y + 5, x + w - 1, y + h - 5);// right
-                        for (int i = 0, j = 0; i < 4; i++, j += 2) {// top
-                            g.drawLine(x + w - 2 - j, y + 4 - i, x + w - 3 - j, y + 4 - i);
-                        }
-
-                        for (int i = 0, j = 0; i < 5; i++, j += 2) {// bottom
-                            g.drawLine(x + w - 1 - j, y + h - 4 + i, x + w - 2 - j, y + h - 4 + i);
-                        }
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + w - 2, y + 6, x + w - 2, y + h - 6);// right
-                            for (int i = 0, j = 0; i < 4; i++, j += 2) {// top
-                                g.drawLine(x + w - 2 - j, y + 5 - i, x + w - 3 - j, y + 5 - i);
-                            }
-
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-
-                            g.drawLine(x + w - 2, y + h - 5, x + w - 2, y + h - 5);// a point
-
-                            for (int i = 0, j = 0; i < 5; i++, j += 2) {// bottom
-                                g.drawLine(x + w - 3 - j, y + h - 4 + i, x + w - 4 - j, y + h - 4 + i);
-                            }
-                        }
-                    }
-                    else if (tabIndex != _tabPane.getSelectedIndex() - 1) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x + w - 1, y + 5, x + w - 1, y + h - 5);// right
-                        for (int i = 0, j = 0; i < 4; i++, j += 2) {// top
-                            g.drawLine(x + w - 2 - j, y + 4 - i, x + w - 3 - j, y + 4 - i);
-                        }
-
-                        for (int i = 0, j = 0; i < w / 2 + 1; i++, j += 2) {// bottom
-                            g.drawLine(x + w - 1 - j, y + h - 4 + i, x + w - 2 - j, y + h - 4 + i);
-                        }
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + w - 2, y + 6, x + w - 2, y + h - 6);// right
-                            for (int i = 0, j = 0; i < 4; i++, j += 2) {// top
-                                g.drawLine(x + w - 2 - j, y + 5 - i, x + w - 3 - j, y + 5 - i);
-                            }
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + w - 2, y + h - 5, x + w - 2, y + h - 5);// a point
-                            for (int i = 0, j = 0; i < w / 2 + 1; i++, j += 2) {// bottom
-                                g.drawLine(x + w - 3 - j, y + h - 4 + i, x + w - 4 - j, y + h - 4 + i);
-                            }
-                        }
-                    }
-                }
-                break;
-            case BOTTOM:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x + 5, y + h - 1, x + w - 5, y + h - 1);// bottom
-                    for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// left
-                        g.drawLine(x + 4 - i, y + h - 2 - j, x + 4 - i, y + h - 3 - j);
-                    }
-
-                    for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                        g.drawLine(x + w - 4 - 1 + i, y + h - 1 - j, x + w - 4 - 1 + i, y + h - 2 - j);
-                    }
-
-                    if (_selectColor2 != null) {
-                        g.setColor(_selectColor2);
-
-                        g.drawLine(x + 5, y + h - 3, x + 5, y + h - 3);// bottom
-
-                        for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// left
-                            g.drawLine(x + 4 - i, y + h - 4 - j, x + 4 - i, y + h - 5 - j);
-                        }
-
-                    }
-
-                    if (_selectColor3 != null) {
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + 5, y + h - 2, x + w - 6, y + h - 2);// a point
-                        for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                            g.drawLine(x + w - 5 + i, y + h - 3 - j, x + w - 5 + i, y + h - 4 - j);
-                        }
-                    }
-                }
-                else {
-                    if ((leftToRight && tabIndex == 0) || (!leftToRight && tabIndex == _tabPane.getTabCount() - 1)) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x + 5, y + h - 1, x + w - 5, y + h - 1);// bottom
-                        for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// left
-                            g.drawLine(x + 4 - i, y + h - 2 - j, x + 4 - i, y + h - 3 - j);
-                        }
-
-                        for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                            g.drawLine(x + w - 4 - 1 + i, y + h - 1 - j, x + w - 4 - 1 + i, y + h - 2 - j);
-                        }
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// left
-                                g.drawLine(x + 5 - i, y + h - 2 - j, x + 5 - i, y + h - 3 - j);
-                            }
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + w - 6, y + h - 2, x + w - 6, y + h - 2);// a point
-                            for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                                g.drawLine(x + w - 5 + i, y + h - 3 - j, x + w - 5 + i, y + h - 4 - j);
-                            }
-                        }
-                    }
-                    else if (tabIndex == _tabPane.getSelectedIndex() + (leftToRight ? -1 : 1)) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x + 5, y + h - 1, x + w - 6, y + h - 1);// bottom
-                        for (int i = 0, j = 0; i < 5; i++, j += 2) {// left
-                            g.drawLine(x + 4 - i, y + h - 2 - j, x + 4 - i, y + h - 3 - j);
-                        }
-                        for (int i = 0, j = 0; i < 5; i++, j += 2) {// right
-                            g.drawLine(x + w - 5 + i, y + h - 1 - j, x + w - 5 + i, y + h - 2 - j);
-                        }
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            for (int i = 0, j = 0; i < 5; i++, j += 2) {// left
-                                g.drawLine(x + 5 - i, y + h - 2 - j, x + 5 - i, y + h - 3 - j);
-                            }
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + w - 6, y + h - 2, x + w - 6, y + h - 2);// a point
-                            for (int i = 0, j = 0; i < 5; i++, j += 2) {// right
-                                g.drawLine(x + w - 5 + i, y + h - 3 - j, x + w - 5 + i, y + h - 4 - j);
-                            }
-                        }
-                    }
-                    else if (tabIndex != _tabPane.getSelectedIndex() + (leftToRight ? -1 : 1)) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x + 5, y + h - 1, x + w - 6, y + h - 1);// bottom
-                        for (int i = 0, j = 0; i < 5; i++, j += 2) {// left
-                            g.drawLine(x + 4 - i, y + h - 2 - j, x + 4 - i, y + h - 3 - j);
-                        }
-
-                        for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                            g.drawLine(x + w - 5 + i, y + h - 1 - j, x + w - 5 + i, y + h - 2 - j);
-                        }
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            for (int i = 0, j = 0; i < 5; i++, j += 2) {// left
-                                g.drawLine(x + 5 - i, y + h - 2 - j, x + 5 - i, y + h - 3 - j);
-                            }
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + w - 6, y + h - 2, x + w - 6, y + h - 2);// a point
-                            for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                                g.drawLine(x + w - 5 + i, y + h - 3 - j, x + w - 5 + i, y + h - 4 - j);
-                            }
-                        }
-                    }
-                }
-                break;
-            case TOP:
-            default:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x + 5, y, x + w - 5, y);// top
-                    for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// left
-                        g.drawLine(x + 4 - i, y + 1 + j, x + 4 - i, y + 2 + j);
-                    }
-                    for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                        g.drawLine(x + w - 4 - 1 + i, y + j, x + w - 4 - 1 + i, y + 1 + j);
-                    }
-
-                    if (_selectColor2 != null) {
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + 6, y + 1, x + w - 7, y + 1);// top
-                        for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// left
-                            g.drawLine(x + 5 - i, y + 1 + j, x + 5 - i, y + 2 + j);
-                        }
-                    }
-
-                    if (_selectColor3 != null) {
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + w - 6, y + 1, x + w - 6, y + 1);// a point
-                        for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                            g.drawLine(x + w - 5 + i, y + 2 + j, x + w - 5 + i, y + 3 + j);
-                        }
-                    }
-                }
-                else {
-                    if ((leftToRight && tabIndex == 0) || (!leftToRight && tabIndex == _tabPane.getTabCount() - 1)) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x + 5, y, x + w - 5, y);// top
-                        for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// left
-                            g.drawLine(x + 4 - i, y + 1 + j, x + 4 - i, y + 2 + j);
-                        }
-                        for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                            g.drawLine(x + w - 4 - 1 + i, y + j, x + w - 4 - 1 + i, y + 1 + j);
-                        }
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + 6, y + 1, x + w - 7, y + 1);// top
-                            for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// left
-                                g.drawLine(x + 5 - i, y + 1 + j, x + 5 - i, y + 2 + j);
-                            }
-                        }
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + w - 6, y + 1, x + w - 6, y + 1);// a point
-                            for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                                g.drawLine(x + w - 5 + i, y + 2 + j, x + w - 5 + i, y + 3 + j);
-                            }
-                        }
-                    }
-                    else if (tabIndex == _tabPane.getSelectedIndex() + (leftToRight ? -1 : 1)) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x + 5, y, x + w - 5, y);// top
-                        for (int i = 0, j = 0; i < 5; i++, j += 2) {// left
-                            g.drawLine(x + 4 - i, y + 1 + j, x + 4 - i, y + 2 + j);
-                        }
-                        for (int i = 0, j = 0; i < 5; i++, j += 2) {// right
-                            g.drawLine(x + w - 4 - 1 + i, y + j, x + w - 4 - 1 + i, y + 1 + j);
-                        }
-
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + 6, y + 1, x + w - 7, y + 1);// top
-                            for (int i = 0, j = 0; i < 5; i++, j += 2) {// left
-                                g.drawLine(x + 5 - i, y + 1 + j, x + 5 - i, y + 2 + j);
-                            }
-                        }
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + w - 6, y + 1, x + w - 6, y + 1);// a point
-                            for (int i = 0, j = 0; i < 5; i++, j += 2) {// right
-                                g.drawLine(x + w - 5 + i, y + 2 + j, x + w - 5 + i, y + 3 + j);
-                            }
-                        }
-                    }
-                    else if (tabIndex != _tabPane.getSelectedIndex() + (leftToRight ? -1 : 1)) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x + 5, y, x + w - 5, y);// top
-                        for (int i = 0, j = 0; i < 5; i++, j += 2) {// left
-                            g.drawLine(x + 4 - i, y + 1 + j, x + 4 - i, y + 2 + j);
-                        }
-                        for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                            g.drawLine(x + w - 4 - 1 + i, y + j, x + w - 4 - 1 + i, y + 1 + j);
-                        }
-                        if (_unselectColor2 != null) {
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + 6, y + 1, x + w - 7, y + 1);// top
-                            for (int i = 0, j = 0; i < 5; i++, j += 2) {// left
-                                g.drawLine(x + 5 - i, y + 1 + j, x + 5 - i, y + 2 + j);
-                            }
-                        }
-
-                        if (_unselectColor3 != null) {
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + w - 6, y + 1, x + w - 6, y + 1);// a point
-                            for (int i = 0, j = 0; i < h / 2 + 1; i++, j += 2) {// right
-                                g.drawLine(x + w - 5 + i, y + 2 + j, x + w - 5 + i, y + 3 + j);
-                            }
-                        }
-                    }
-                }
-        }
-    }
-
-
-    protected void paintWindowsTabBorder(Graphics g, int tabPlacement, int tabIndex,
-                                         int x, int y, int w, int h, boolean isSelected) {
-        int colorTheme = getColorTheme();
-        switch (tabPlacement) {
-            case LEFT:
-                if (colorTheme == JideTabbedPane.COLOR_THEME_OFFICE2003 || colorTheme == JideTabbedPane.COLOR_THEME_WIN2K) {
-                    if (isSelected) {
-                        g.setColor(_selectColor1);
-                        g.drawLine(x - 2, y + 1, x - 2, y + h - 1);// left
-                        g.drawLine(x - 1, y, x - 1, y);// top arc
-                        g.drawLine(x, y - 1, x + w - 1, y - 1);// top
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x - 1, y + h, x - 1, y + h);// bottom arc
-                        g.drawLine(x, y + h + 1, x, y + h + 1);// bottom arc
-                        g.drawLine(x + 1, y + h, x + w - 1, y + h);// bottom
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x, y + h, x, y + h);// bottom arc
-                        g.drawLine(x + 1, y + h + 1, x + w - 1, y + h + 1);// bottom
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x, y + 2, x, y + h - 3);// left
-                            g.drawLine(x + 1, y + 1, x + 1, y + 1);// top arc
-                            g.drawLine(x + 2, y, x + w - 1, y);// top
-
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + 1, y + h - 2, x + 1, y + h - 2);// bottom arc
-                            g.drawLine(x + 2, y + h - 1, x + 2, y + h - 1);// bottom arc
-                            g.drawLine(x + 3, y + h - 2, x + w - 1, y + h - 2);// bottom
-
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + 2, y + h - 2, x + 2, y + h - 2);// bottom arc
-                            g.drawLine(x + 3, y + h - 1, x + w - 1, y + h - 1);// bottom
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x, y + 3, x, y + h - 2);// left
-                            g.drawLine(x + 1, y + 2, x + 1, y + 2);// top arc
-                            g.drawLine(x + 2, y + 1, x + w - 1, y + 1);// top
-
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + 1, y + h - 1, x + 1, y + h - 1);// bottom arc
-                            g.drawLine(x + 2, y + h, x + 2, y + h);// bottom arc
-                            g.drawLine(x + 3, y + h - 1, x + w - 1, y + h - 1);// bottom
-
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + 2, y + h - 1, x + 2, y + h - 1);// bottom arc
-                            g.drawLine(x + 3, y + h, x + w - 1, y + h);// bottom
-                        }
-                    }
-                }
-                else {
-                    if (isSelected) {
-                        g.setColor(_selectColor1);
-                        g.drawLine(x - 2, y + 1, x - 2, y + h - 1);// left
-                        g.drawLine(x - 1, y, x - 1, y);// top arc
-                        g.drawLine(x, y - 1, x, y - 1);// top arc
-                        g.drawLine(x - 1, y + h, x - 1, y + h);// bottom arc
-                        g.drawLine(x, y + h + 1, x, y + h + 1);// bottom arc
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x - 1, y + 1, x - 1, y + h - 1);// left
-                        g.drawLine(x, y, x, y + h);// left
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + 1, y - 2, x + w - 1, y - 2);// top
-                        g.drawLine(x + 1, y + h + 2, x + w - 1, y + h + 2);// bottom
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x, y + 2, x, y + h - 4);// left
-                            g.drawLine(x + 1, y + 1, x + 1, y + 1);// top arc
-                            g.drawLine(x + 2, y, x + w - 1, y);// top
-                            g.drawLine(x + 1, y + h - 3, x + 1, y + h - 3);// bottom arc
-                            g.drawLine(x + 2, y + h - 2, x + w - 1, y + h - 2);// bottom
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x, y + 4, x, y + h - 2);// left
-                            g.drawLine(x + 1, y + 3, x + 1, y + 3);// top arc
-                            g.drawLine(x + 2, y + 2, x + w - 1, y + 2);// top
-                            g.drawLine(x + 1, y + h - 1, x + 1, y + h - 1);// bottom arc
-                            g.drawLine(x + 2, y + h, x + w - 1, y + h);// bottom
-                        }
-                    }
-                }
-                break;
-            case RIGHT:
-                if (colorTheme == JideTabbedPane.COLOR_THEME_OFFICE2003 || colorTheme == JideTabbedPane.COLOR_THEME_WIN2K) {
-                    if (isSelected) {
-                        g.setColor(_selectColor1);
-                        g.drawLine(x + w - 1, y - 1, x, y - 1);// top
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + w, y + 1, x + w, y + h - 1);// right
-                        g.drawLine(x + w - 1, y + h, x, y + h);// bottom
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + w, y, x + w, y);// top arc
-                        g.drawLine(x + w + 1, y + 1, x + w + 1, y + h - 1);// right
-                        g.drawLine(x + w, y + h, x + w, y + h);// bottom arc
-                        g.drawLine(x + w - 1, y + h + 1, x, y + h + 1);// bottom
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x + w - 3, y, x, y);// top
-
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 3);// right
-                            g.drawLine(x + w - 3, y + h - 2, x, y + h - 2);// bottom
-
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);// top arc
-                            g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 3);// right
-                            g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);// bottom arc
-                            g.drawLine(x + w - 3, y + h - 1, x, y + h - 1);// bottom
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x + w - 3, y + 1, x, y + 1);// top
-
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + w - 2, y + 3, x + w - 2, y + h - 2);// right
-                            g.drawLine(x + w - 3, y + h - 1, x, y + h - 1);// bottom
-
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + w - 2, y + 2, x + w - 2, y + 2);// top arc
-                            g.drawLine(x + w - 1, y + 3, x + w - 1, y + h - 2);// right
-                            g.drawLine(x + w - 2, y + h - 1, x + w - 2, y + h - 1);// bottom arc
-                            g.drawLine(x + w - 3, y + h, x, y + h);// bottom
-                        }
-                    }
-                }
-                else {
-                    if (isSelected) {
-                        g.setColor(_selectColor1);
-                        g.drawLine(x + w + 1, y + 1, x + w + 1, y + h - 1);// right
-                        g.drawLine(x + w, y, x + w, y);// top arc
-                        g.drawLine(x + w - 1, y - 1, x + w - 1, y - 1);// top  arc
-                        g.drawLine(x + w, y + h, x + w, y + h);// bottom arc
-                        g.drawLine(x + w - 1, y + h + 1, x + w - 1, y + h + 1);// bottom arc
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + w, y + 1, x + w, y + h - 1);// right
-                        g.drawLine(x + w - 1, y, x + w - 1, y + h);// right
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + w - 2, y - 2, x, y - 2);// top
-                        g.drawLine(x + w - 2, y + h + 2, x, y + h + 2);// bottom
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 4);// right
-                            g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);// top arc
-                            g.drawLine(x + w - 2, y + h - 3, x + w - 2, y + h - 3);// bottom arc
-                            g.drawLine(x + w - 3, y, x, y);// top
-                            g.drawLine(x + w - 3, y + h - 2, x, y + h - 2);// bottom
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x + w - 1, y + 4, x + w - 1, y + h - 2);// right
-                            g.drawLine(x + w - 2, y + 3, x + w - 2, y + 3);// top arc
-                            g.drawLine(x + w - 3, y + 2, x, y + 2);// top
-                            g.drawLine(x + w - 2, y + h - 1, x + w - 2, y + h - 1);// bottom arc
-                            g.drawLine(x + w - 3, y + h, x, y + h);// bottom
-                        }
-                    }
-                }
-                break;
-            case BOTTOM:
-                if (colorTheme == JideTabbedPane.COLOR_THEME_OFFICE2003 || colorTheme == JideTabbedPane.COLOR_THEME_WIN2K) {
-                    if (isSelected) {
-                        g.setColor(_selectColor1);
-                        g.drawLine(x, y + h, x, y + h);// left arc
-                        g.drawLine(x - 1, y + h - 1, x - 1, y);// left
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + 1, y + h, x + w - 2, y + h);// bottom
-                        g.drawLine(x + w - 1, y + h - 1, x + w - 1, y - 1);// right
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + 1, y + h + 1, x + w - 2, y + h + 1);// bottom
-                        g.drawLine(x + w - 1, y + h, x + w - 1, y + h);// right arc
-                        g.drawLine(x + w, y + h - 1, x + w, y - 1);// right
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x, y + h - 2, x, y + h - 2);// left arc
-                            g.drawLine(x - 1, y + h - 3, x - 1, y);// left
-
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + 1, y + h - 2, x + w - 4, y + h - 2);// bottom
-                            g.drawLine(x + w - 3, y + h - 3, x + w - 3, y - 1);// right
-
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + 1, y + h - 1, x + w - 4, y + h - 1);// bottom
-                            g.drawLine(x + w - 3, y + h - 2, x + w - 3, y + h - 2);// right arc
-                            g.drawLine(x + w - 2, y + h - 3, x + w - 2, y - 1);// right
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x + 2, y + h - 2, x + 2, y + h - 2);// left arc
-                            g.drawLine(x + 1, y + h - 3, x + 1, y);// left
-
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + 3, y + h - 2, x + w - 2, y + h - 2);// bottom
-                            g.drawLine(x + w - 1, y + h - 3, x + w - 1, y);// right
-
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + 3, y + h - 1, x + w - 2, y + h - 1);// bottom
-                            g.drawLine(x + w - 1, y + h - 2, x + w - 1, y + h - 2);// right arc
-                            g.drawLine(x + w, y + h - 3, x + w, y);// right
-                        }
-                    }
-                }
-                else {
-                    if (isSelected) {
-                        g.setColor(_selectColor1);
-                        g.drawLine(x + 1, y + h + 1, x + w, y + h + 1);// bottom
-                        g.drawLine(x, y + h, x, y + h);// right arc
-                        g.drawLine(x - 1, y + h - 1, x - 1, y + h - 1);// right arc
-                        g.drawLine(x + w + 1, y + h, x + w + 1, y + h);// left arc
-                        g.drawLine(x + w + 2, y + h - 1, x + w + 2, y + h - 1);// left arc
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + 1, y + h, x + w, y + h);// bottom
-                        g.drawLine(x, y + h - 1, x + w + 1, y + h - 1);// bottom
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x - 1, y + h - 2, x - 1, y);// left
-                        g.drawLine(x + w + 2, y + h - 2, x + w + 2, y);// right
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x + 3, y + h - 1, x + w - 3, y + h - 1);// bottom
-                            g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);// right arc
-                            g.drawLine(x + w - 1, y + h - 3, x + w - 1, y - 1);// right
-                            g.drawLine(x + 2, y + h - 2, x + 2, y + h - 2);// left arc
-                            g.drawLine(x + 1, y + h - 3, x + 1, y);// left
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x + 3, y + h - 1, x + w - 3, y + h - 1);// bottom
-                            g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);// right arc
-                            g.drawLine(x + w - 1, y + h - 3, x + w - 1, y - 1);// right
-                            g.drawLine(x + 2, y + h - 2, x + 2, y + h - 2);// left arc
-                            g.drawLine(x + 1, y + h - 3, x + 1, y);// left
-                        }
-                    }
-                }
-                break;
-            case TOP:
-            default:
-                if (colorTheme == JideTabbedPane.COLOR_THEME_OFFICE2003 || colorTheme == JideTabbedPane.COLOR_THEME_WIN2K) {
-                    if (isSelected) {
-                        g.setColor(_selectColor1);
-                        g.drawLine(x, y - 1, x, y - 1); // left arc
-                        g.drawLine(x - 1, y, x - 1, y + h - 1);// left
-                        g.drawLine(x + 1, y - 2, x + w + 1, y - 2);// top
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + w + 2, y - 1, x + w + 2, y + h - 1);// right
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + w + 2, y - 1, x + w + 2, y - 1);// right arc
-                        g.drawLine(x + w + 3, y, x + w + 3, y + h - 1);// right
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x + 2, y + 1, x + 2, y + 1); // left arc
-                            g.drawLine(x + 1, y + 2, x + 1, y + h - 1); // left
-                            g.drawLine(x + 3, y, x + w - 2, y); // top
-
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + w - 1, y + 1, x + w - 1, y + h - 1);// right
-
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + w - 1, y + 1, x + w - 1, y + 1);// right arc
-                            g.drawLine(x + w, y + 2, x + w, y + h - 1);// right
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x + 2, y + 1, x + 2, y + 1); // left arc
-                            g.drawLine(x + 1, y + 2, x + 1, y + h - 1); // left
-                            g.drawLine(x + 3, y, x + w - 2, y); // top
-
-                            g.setColor(_unselectColor2);
-                            g.drawLine(x + w - 1, y + 1, x + w - 1, y + h - 1);// right
-
-                            g.setColor(_unselectColor3);
-                            g.drawLine(x + w - 1, y + 1, x + w - 1, y + 1);// right arc
-                            g.drawLine(x + w, y + 2, x + w, y + h - 1);// right
-                        }
-                    }
-                }
-                else {
-                    if (isSelected) {
-                        g.setColor(_selectColor1);
-                        g.drawLine(x + 1, y - 2, x + w, y - 2); // top
-                        g.drawLine(x, y - 1, x, y - 1); // left arc
-                        g.drawLine(x - 1, y, x - 1, y); // left arc
-                        g.drawLine(x + w + 1, y - 1, x + w + 1, y - 1);// right arc
-                        g.drawLine(x + w + 2, y, x + w + 2, y);// right arc
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + 1, y - 1, x + w, y - 1);// top
-                        g.drawLine(x, y, x + w + 1, y);// top
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x - 1, y + 1, x - 1, y + h - 1);// left
-                        g.drawLine(x + w + 2, y + 1, x + w + 2, y + h - 1);// right
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x + 1, y + 2, x + 1, y + h - 1); // left
-                            g.drawLine(x + 2, y + 1, x + 2, y + 1); // left arc
-                            g.drawLine(x + 3, y, x + w - 3, y); // top
-                            g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);// right arc
-                            g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 1);// right
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex()) {
-                            g.setColor(_unselectColor1);
-                            g.drawLine(x + 1, y + 2, x + 1, y + h - 1); // left
-                            g.drawLine(x + 2, y + 1, x + 2, y + 1); // left arc
-                            g.drawLine(x + 3, y, x + w - 3, y); // top
-                            g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);// right arc
-                            g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 1);// right
-                        }
-                    }
-                }
-        }
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    protected void paintTabBorderMouseOver(Graphics g, int tabPlacement, int tabIndex,
-                                           int x, int y, int w, int h, boolean isSelected) {
-        if (getTabShape() == JideTabbedPane.SHAPE_WINDOWS) {
-            switch (tabPlacement) {
-                case LEFT:
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        y = y - 2;
-                    }
-
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y + 4, x, y + h - 2);
-                    g.drawLine(x + 1, y + 3, x + 1, y + 3);
-                    g.drawLine(x + 2, y + 2, x + 2, y + 2);
-                    g.drawLine(x + 1, y + h - 1, x + 1, y + h - 1);
-                    g.drawLine(x + 2, y + h, x + 2, y + h);
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x + 1, y + 4, x + 1, y + h - 2);
-                    g.drawLine(x + 2, y + 3, x + 2, y + h - 1);
-                    break;
-                case RIGHT:
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        y = y - 2;
-                    }
-
-                    g.setColor(_selectColor1);
-                    g.drawLine(x + w - 1, y + 4, x + w - 1, y + h - 2);
-                    g.drawLine(x + w - 2, y + 3, x + w - 2, y + 3);
-                    g.drawLine(x + w - 3, y + 2, x + w - 3, y + 2);
-                    g.drawLine(x + w - 2, y + h - 1, x + w - 2, y + h - 1);
-                    g.drawLine(x + w - 3, y + h, x + w - 3, y + h);
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x + w - 2, y + 4, x + w - 2, y + h - 2);
-                    g.drawLine(x + w - 3, y + 3, x + w - 3, y + h - 1);
-                    break;
-                case BOTTOM:
-                    g.setColor(_selectColor1);
-                    g.drawLine(x + 3, y + h - 1, x + w - 3, y + h - 1);
-                    g.drawLine(x + 2, y + h - 2, x + 2, y + h - 2);
-                    g.drawLine(x + 1, y + h - 3, x + 1, y + h - 3);
-                    g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);
-                    g.drawLine(x + w - 1, y + h - 3, x + w - 1, y + h - 3);
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x + 3, y + h - 2, x + w - 3, y + h - 2);
-                    g.drawLine(x + 2, y + h - 3, x + w - 2, y + h - 3);
-                    break;
-                case TOP:
-                default:
-                    g.setColor(_selectColor1);
-                    g.drawLine(x + 3, y, x + w - 3, y);
-                    g.drawLine(x + 2, y + 1, x + 2, y + 1);
-                    g.drawLine(x + 1, y + 2, x + 1, y + 2);
-                    g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);
-                    g.drawLine(x + w - 1, y + 2, x + w - 1, y + 2);
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x + 3, y + 1, x + w - 3, y + 1);
-                    g.drawLine(x + 2, y + 2, x + w - 2, y + 2);
-            }
-        }
-        else if (getTabShape() == JideTabbedPane.SHAPE_WINDOWS_SELECTED) {
-            switch (tabPlacement) {
-                case LEFT:
-                    if (getColorTheme() == JideTabbedPane.COLOR_THEME_WINXP) {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            y -= 2;
-                        }
-
-                        g.setColor(_selectColor1);
-                        g.drawLine(x, y + 4, x, y + h - 2);
-                        g.drawLine(x + 1, y + 3, x + 1, y + 3);
-                        g.drawLine(x + 2, y + 2, x + 2, y + 2);
-                        g.drawLine(x + 1, y + h - 1, x + 1, y + h - 1);
-                        g.drawLine(x + 2, y + h, x + 2, y + h);
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + 1, y + 4, x + 1, y + h - 2);
-                        g.drawLine(x + 2, y + 3, x + 2, y + h - 1);
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + 3, y + 2, x + w - 1, y + 2);
-                        g.drawLine(x + 3, y + h, x + w - 1, y + h);
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            y = y - 1;
-                        }
-                        g.setColor(_selectColor1);
-                        g.drawLine(x, y + 3, x, y + h - 2);// left
-                        g.drawLine(x + 1, y + 2, x + 1, y + 2);// top arc
-                        g.drawLine(x + 2, y + 1, x + w - 1, y + 1);// top
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + 1, y + h - 1, x + 1, y + h - 1);// bottom arc
-                        g.drawLine(x + 2, y + h, x + 2, y + h);// bottom arc
-                        g.drawLine(x + 3, y + h - 1, x + w - 1, y + h - 1);// bottom
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + 2, y + h - 1, x + 2, y + h - 1);// bottom arc
-                        g.drawLine(x + 3, y + h, x + w - 1, y + h);// bottom
-                    }
-                    break;
-                case RIGHT:
-                    if (getColorTheme() == JideTabbedPane.COLOR_THEME_WINXP) {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            y = y - 2;
-                        }
-
-                        g.setColor(_selectColor1);
-                        g.drawLine(x + w - 1, y + 4, x + w - 1, y + h - 2);
-                        g.drawLine(x + w - 2, y + 3, x + w - 2, y + 3);
-                        g.drawLine(x + w - 3, y + 2, x + w - 3, y + 2);
-                        g.drawLine(x + w - 2, y + h - 1, x + w - 2, y + h - 1);
-                        g.drawLine(x + w - 3, y + h, x + w - 3, y + h);
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + w - 2, y + 4, x + w - 2, y + h - 2);
-                        g.drawLine(x + w - 3, y + 3, x + w - 3, y + h - 1);
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + w - 4, y + 2, x, y + 2);
-                        g.drawLine(x + w - 4, y + h, x, y + h);
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            y = y - 1;
-                        }
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + w - 1, y + 3, x + w - 1, y + h - 2);// right
-                        g.drawLine(x + w - 2, y + h - 1, x + w - 2, y + h - 1);// bottom arc
-                        g.drawLine(x + w - 3, y + h, x, y + h);// bottom
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + w - 2, y + 3, x + w - 2, y + h - 2);// right
-                        g.drawLine(x + w - 3, y + h - 1, x, y + h - 1);// bottom
-
-                        g.setColor(_selectColor1);
-                        g.drawLine(x + w - 2, y + 2, x + w - 2, y + 2);// top arc
-                        g.drawLine(x + w - 3, y + 1, x, y + 1);// top
-                    }
-                    break;
-                case BOTTOM:
-                    if (getColorTheme() == JideTabbedPane.COLOR_THEME_WINXP) {
-                        g.setColor(_selectColor1);
-                        g.drawLine(x + 3, y + h - 1, x + w - 3, y + h - 1);
-                        g.drawLine(x + 2, y + h - 2, x + 2, y + h - 2);
-                        g.drawLine(x + 1, y + h - 3, x + 1, y + h - 3);
-                        g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);
-                        g.drawLine(x + w - 1, y + h - 3, x + w - 1, y + h - 3);
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + 3, y + h - 2, x + w - 3, y + h - 2);
-                        g.drawLine(x + 2, y + h - 3, x + w - 2, y + h - 3);
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + 1, y, x + 1, y + h - 4); // left
-                        g.drawLine(x + w - 1, y, x + w - 1, y + h - 4);// right
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            x = x - 2;
-                        }
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + 3, y + h - 1, x + w - 2, y + h - 1);// bottom
-                        g.drawLine(x + w - 1, y + h - 2, x + w - 1, y + h - 2);// right arc
-                        g.drawLine(x + w, y + h - 3, x + w, y);// right
-
-                        g.setColor(_selectColor1);
-                        g.drawLine(x + 2, y + h - 2, x + 2, y + h - 2);// left
-                        g.drawLine(x + 1, y + h - 3, x + 1, y);// left arc
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + 3, y + h - 2, x + w - 2, y + h - 2);// bottom
-                        g.drawLine(x + w - 1, y + h - 3, x + w - 1, y);// right
-                    }
-                    break;
-                case TOP:
-                default:
-                    if (getColorTheme() == JideTabbedPane.COLOR_THEME_WINXP) {
-                        g.setColor(_selectColor1);
-                        g.drawLine(x + 3, y, x + w - 3, y);
-                        g.drawLine(x + 2, y + 1, x + 2, y + 1);
-                        g.drawLine(x + 1, y + 2, x + 1, y + 2);
-                        g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);
-                        g.drawLine(x + w - 1, y + 2, x + w - 1, y + 2);
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + 3, y + 1, x + w - 3, y + 1);
-                        g.drawLine(x + 2, y + 2, x + w - 2, y + 2);
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + 1, y + 3, x + 1, y + h - 1); // left
-                        g.drawLine(x + w - 1, y + 3, x + w - 1, y + h - 1);// right
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            x = x - 1;
-                        }
-                        g.setColor(_selectColor1);
-                        g.drawLine(x + 2, y + 1, x + 2, y + 1); // left arc
-                        g.drawLine(x + 1, y + 2, x + 1, y + h - 1); // left
-                        g.drawLine(x + 3, y, x + w - 2, y); // top
-
-                        g.setColor(_selectColor2);
-                        g.drawLine(x + w - 1, y + 1, x + w - 1, y + h - 1);// right
-
-                        g.setColor(_selectColor3);
-                        g.drawLine(x + w - 1, y + 1, x + w - 1, y + 1);// right arc
-                        g.drawLine(x + w, y + 2, x + w, y + h - 1);// right
-                    }
-            }
-
-        }
-    }
-
-    protected void paintVsnetTabBorder(Graphics g, int tabPlacement, int tabIndex,
-                                       int x, int y, int w, int h, boolean isSelected) {
-        boolean leftToRight = _tabPane.getComponentOrientation().isLeftToRight();
-        switch (tabPlacement) {
-            case LEFT:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y, x + w - 1, y);// top
-                    g.drawLine(x, y, x, y + h - 2);// left
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x, y + h - 1, x + w - 1, y + h - 1);// bottom
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        g.drawLine(x + 2, y + h - 2, x + w - 2, y + h - 2);// bottom
-                    }
-                    else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != 0) {
-                        g.drawLine(x + 2, y, x + w - 2, y);// top
-                    }
-                }
-                break;
-            case RIGHT:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y, x + w - 1, y);// top
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x + w - 1, y, x + w - 1, y + h - 2);// left
-                    g.drawLine(x, y + h - 1, x + w - 1, y + h - 1);// bottom
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        g.drawLine(x + 1, y + h - 2, x + w - 3, y + h - 2);// bottom
-                    }
-                    else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != 0) {
-                        g.drawLine(x + 1, y, x + w - 3, y);// top
-                    }
-                }
-                break;
-            case BOTTOM:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y, x, y + h - 1); // left
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x, y + h - 1, x + w - 1, y + h - 1); // bottom
-                    g.drawLine(x + w - 1, y, x + w - 1, y + h - 2); // right
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    if (leftToRight) {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 2); // right
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != 0) {
-                            g.drawLine(x, y + 2, x, y + h - 2); // left
-                        }
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.drawLine(x, y + 2, x, y + h - 2); // left
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != _tabPane.getTabCount() - 1) {
-                            g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 2); // right
-                        }
-                    }
-                }
-                break;
-            case TOP:
-            default:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y + 1, x, y + h - 1); // left
-                    g.drawLine(x, y, x + w - 1, y); // top
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x + w - 1, y, x + w - 1, y + h - 1); // right
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    if (leftToRight) {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 2); // right
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != 0) {
-                            g.drawLine(x, y + 2, x, y + h - 2); // left
-                        }
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.drawLine(x, y + 2, x, y + h - 2); // left
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != _tabPane.getTabCount() - 1) {
-                            g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 2); // right
-                        }
-                    }
-                }
-        }
-
-    }
-
-    protected void paintRoundedVsnetTabBorder(Graphics g, int tabPlacement, int tabIndex,
-                                              int x, int y, int w, int h, boolean isSelected) {
-        boolean leftToRight = _tabPane.getComponentOrientation().isLeftToRight();
-        switch (tabPlacement) {
-            case LEFT:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x + 2, y, x + w - 1, y);// top
-                    g.drawLine(x + 1, y + 1, x + 1, y + 1);// top-left
-                    g.drawLine(x, y + 2, x, y + h - 3);// left
-                    g.drawLine(x + 1, y + h - 2, x + 1, y + h - 2);// bottom-left
-                    g.drawLine(x + 2, y + h - 1, x + w - 1, y + h - 1);// bottom
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        g.drawLine(x + 2, y + h - 2, x + w - 2, y + h - 2);// bottom
-                    }
-                    else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != 0) {
-                        g.drawLine(x + 2, y + 1, x + w - 2, y + 1);// top
-                    }
-                }
-                break;
-            case RIGHT:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y, x + w - 3, y);// top
-                    g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);// top-left
-                    g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 3);// left
-                    g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);// bottom-left
-                    g.drawLine(x, y + h - 1, x + w - 3, y + h - 1);// bottom
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        g.drawLine(x + 1, y + h - 2, x + w - 3, y + h - 2);// bottom
-                    }
-                    else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != 0) {
-                        g.drawLine(x + 1, y + 1, x + w - 3, y + 1);// top
-                    }
-                }
-                break;
-            case BOTTOM:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y, x, y + h - 3); // left
-                    g.drawLine(x + 1, y + h - 2, x + 1, y + h - 2); // bottom-left
-                    g.drawLine(x + 2, y + h - 1, x + w - 3, y + h - 1); // bottom
-                    g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2); // bottom-right
-                    g.drawLine(x + w - 1, y, x + w - 1, y + h - 3); // right
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    if (leftToRight) {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 2); // right
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != 0) {
-                            g.drawLine(x, y + 2, x, y + h - 2); // left
-                        }
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.drawLine(x, y + 2, x, y + h - 2); // left
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != _tabPane.getTabCount() - 1) {
-                            g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 2); // right
-                        }
-                    }
-                }
-                break;
-            case TOP:
-            default:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y + 2, x, y + h - 1); // left
-                    g.drawLine(x, y + 2, x + 2, y); // top-left
-                    g.drawLine(x + 2, y, x + w - 3, y); // top
-                    g.drawLine(x + w - 3, y, x + w - 1, y + 2); // top-left
-                    g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 1); // right
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    if (leftToRight) {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 2); // right
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != 0) {
-                            g.drawLine(x, y + 2, x, y + h - 2); // left
-                        }
-                    }
-                    else {
-                        if (tabIndex > _tabPane.getSelectedIndex()) {
-                            g.drawLine(x, y + 2, x, y + h - 2); // left
-                        }
-                        else if (tabIndex < _tabPane.getSelectedIndex() && tabIndex != _tabPane.getTabCount() - 1) {
-                            g.drawLine(x + w - 2, y + 2, x + w - 2, y + h - 2); // right
-                        }
-                    }
-                }
-        }
-
-    }
-
-    protected void paintFlatTabBorder(Graphics g, int tabPlacement, int tabIndex,
-                                      int x, int y, int w, int h, boolean isSelected) {
-        switch (tabPlacement) {
-            case LEFT:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawRect(x, y, w, h);
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        if (tabIndex == _tabPane.getTabCount() - 1) {
-                            g.drawRect(x, y, w, h - 1);
-                        }
-                        else {
-                            g.drawRect(x, y, w, h);
-                        }
-                    }
-                    else if (tabIndex < _tabPane.getSelectedIndex()) {
-                        g.drawRect(x, y, w, h);
-                    }
-                }
-                break;
-            case RIGHT:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawRect(x - 1, y, w, h);
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        if (tabIndex == _tabPane.getTabCount() - 1) {
-                            g.drawRect(x - 1, y, w, h - 1);
-                        }
-                        else {
-                            g.drawRect(x - 1, y, w, h);
-                        }
-                    }
-                    else if (tabIndex < _tabPane.getSelectedIndex()) {
-                        g.drawRect(x - 1, y, w, h);
-                    }
-                }
-                break;
-            case BOTTOM:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawRect(x, y - 1, w, h);
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    g.drawRect(x, y - 1, w, h);
-                }
-                break;
-            case TOP:
-            default:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawRect(x, y, w, h);
-                }
-                else {
-                    g.setColor(_unselectColor1);
-                    g.drawRect(x, y, w, h);
-                }
-        }
-    }
-
-    protected void paintRoundedFlatTabBorder(Graphics g, int tabPlacement, int tabIndex,
-                                             int x, int y, int w, int h, boolean isSelected) {
-        switch (tabPlacement) {
-            case LEFT:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x + 2, y, x + w - 1, y);
-                    g.drawLine(x + 2, y + h, x + w - 1, y + h);
-                    g.drawLine(x, y + 2, x, y + h - 2);
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x + 1, y + 1, x + 1, y + 1);
-//                    g.drawLine(x, y + 1, x, y + 1);
-                    g.drawLine(x + 1, y + h - 1, x + 1, y + h - 1);
-//                    g.drawLine(x + 1, y + h, x + 1, y + h);
-                }
-                else {
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x + 2, y, x + w - 1, y);
-
-                        if (tabIndex == _tabPane.getTabCount() - 1) {
-                            g.drawLine(x + 2, y + h - 1, x + w - 1, y + h - 1);
-                            g.drawLine(x, y + 2, x, y + h - 3);
-                        }
-                        else {
-                            g.drawLine(x + 2, y + h, x + w - 1, y + h);
-                            g.drawLine(x, y + 2, x, y + h - 2);
-                        }
-
-                        g.setColor(_unselectColor2);
-                        g.drawLine(x + 1, y + 1, x + 1, y + 1);
-//                        g.drawLine(x, y + 1, x, y + 1);
-
-                        if (tabIndex == _tabPane.getTabCount() - 1) {
-                            g.drawLine(x, y + h - 2, x, y + h - 2);
-                            g.drawLine(x + 1, y + h - 1, x + 1, y + h - 1);
-                        }
-                        else {
-                            g.drawLine(x, y + h - 1, x, y + h - 1);
-                            g.drawLine(x + 1, y + h, x + 1, y + h);
-                        }
-                    }
-                    else if (tabIndex < _tabPane.getSelectedIndex()) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x + 2, y, x + w - 1, y);
-                        g.drawLine(x + 2, y + h, x + w - 1, y + h);
-                        g.drawLine(x, y + 2, x, y + h - 2);
-
-                        g.setColor(_unselectColor2);
-                        g.drawLine(x + 1, y + 1, x + 1, y + 1);
-//                        g.drawLine(x, y + 1, x, y + 1);
-                        g.drawLine(x + 1, y + h - 1, x + 1, y + h - 1);
-//                        g.drawLine(x + 1, y + h, x + 1, y + h);
-                    }
-                }
-                break;
-            case RIGHT:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y, x + w - 3, y);
-                    g.drawLine(x, y + h, x + w - 3, y + h);
-                    g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 2);
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);
-//                    g.drawLine(x + w - 1, y + 1, x + w - 1, y + 1);
-//                    g.drawLine(x + w - 1, y + h - 1, x + w - 1, y + h - 1);
-                    g.drawLine(x + w - 2, y + h - 1, x + w - 2, y + h - 1);
-                }
-                else {
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x, y, x + w - 3, y);
-
-                        if (tabIndex == _tabPane.getTabCount() - 1) {
-                            g.drawLine(x, y + h - 1, x + w - 3, y + h - 1);
-                            g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 3);
-                        }
-                        else {
-                            g.drawLine(x, y + h, x + w - 3, y + h);
-                            g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 2);
-                        }
-
-                        g.setColor(_unselectColor2);
-                        g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);
-//                        g.drawLine(x + w - 1, y + 1, x + w - 1, y + 1);
-
-                        if (tabIndex == _tabPane.getTabCount() - 1) {
-                            g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);
-//                            g.drawLine(x + w - 2, y + h - 1, x + w - 2, y + h - 1);
-                        }
-                        else {
-//                            g.drawLine(x + w - 1, y + h - 1, x + w - 1, y + h - 1);
-                            g.drawLine(x + w - 2, y + h - 1, x + w - 2, y + h - 1);
-                        }
-                    }
-                    else if (tabIndex < _tabPane.getSelectedIndex()) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x, y, x + w - 3, y);
-                        g.drawLine(x, y + h, x + w - 3, y + h);
-                        g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 2);
-
-                        g.setColor(_unselectColor2);
-                        g.drawLine(x + w - 2, y + 1, x + w - 2, y + 1);
-//                        g.drawLine(x + w - 1, y + 1, x + w - 1, y + 1);
-                        g.drawLine(x + w - 2, y + h - 1, x + w - 2, y + h - 1);
-//                        g.drawLine(x + w - 2, y + h, x + w - 2, y + h);
-                    }
-                }
-                break;
-            case BOTTOM:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y, x, y + h - 3);
-                    g.drawLine(x + 2, y + h - 1, x + w - 2, y + h - 1);
-                    g.drawLine(x + w, y, x + w, y + h - 3);
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x + 1, y + h - 2, x + 1, y + h - 2);
-//                    g.drawLine(x + 1, y + h - 1, x + 1, y + h - 1);
-//                    g.drawLine(x + w - 1, y + h - 1, x + w - 1, y + h - 1);
-                    g.drawLine(x + w - 1, y + h - 2, x + w - 1, y + h - 2);
-                }
-                else {
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x, y, x, y + h - 3);
-
-                        if (tabIndex == _tabPane.getTabCount() - 1) {
-                            g.drawLine(x + 2, y + h - 1, x + w - 3, y + h - 1);
-                            g.drawLine(x + w - 1, y, x + w - 1, y + h - 3);
-                        }
-                        else {
-                            g.drawLine(x + 2, y + h - 1, x + w - 2, y + h - 1);
-                            g.drawLine(x + w, y, x + w, y + h - 3);
-                        }
-
-                        g.setColor(_unselectColor2);
-                        g.drawLine(x + 1, y + h - 2, x + 1, y + h - 2);
-//                        g.drawLine(x + 1, y + h - 1, x + 1, y + h - 1);
-
-                        if (tabIndex == _tabPane.getTabCount() - 1) {
-//                            g.drawLine(x + w - 2, y + h - 1, x + w - 2, y + h - 1);
-                            g.drawLine(x + w - 2, y + h - 2, x + w - 2, y + h - 2);
-                        }
-                        else {
-//                            g.drawLine(x + w - 1, y + h - 1, x + w - 1, y + h - 1);
-                            g.drawLine(x + w - 1, y + h - 2, x + w - 1, y + h - 2);
-                        }
-                    }
-                    else if (tabIndex < _tabPane.getSelectedIndex()) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x, y, x, y + h - 3);
-                        g.drawLine(x + 2, y + h - 1, x + w - 2, y + h - 1);
-                        g.drawLine(x + w, y, x + w, y + h - 3);
-
-                        g.setColor(_unselectColor2);
-                        g.drawLine(x + 1, y + h - 2, x + 1, y + h - 2);
-//                        g.drawLine(x + 1, y + h - 1, x + 1, y + h - 1);
-//                        g.drawLine(x + w - 1, y + h - 1, x + w - 1, y + h - 1);
-                        g.drawLine(x + w - 1, y + h - 2, x + w - 1, y + h - 2);
-                    }
-                }
-                break;
-            case TOP:
-            default:
-                if (isSelected) {
-                    g.setColor(_selectColor1);
-                    g.drawLine(x, y + h - 1, x, y + 2);
-                    g.drawLine(x + 2, y, x + w - 2, y);
-                    g.drawLine(x + w, y + 2, x + w, y + h - 1);
-
-                    g.setColor(_selectColor2);
-                    g.drawLine(x, y + 2, x + 2, y); // top-left
-                    g.drawLine(x + w - 2, y, x + w, y + 2);
-//                    g.drawLine(x + w, y + 1, x + w, y + 1);
-                }
-                else {
-                    if (tabIndex > _tabPane.getSelectedIndex()) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x, y + h - 1, x, y + 2);
-
-                        if (tabIndex == _tabPane.getTabCount() - 1) {
-                            g.drawLine(x + 2, y, x + w - 3, y);
-                            g.drawLine(x + w - 1, y + 2, x + w - 1, y + h - 1);
-                        }
-                        else {
-                            g.drawLine(x + 2, y, x + w - 2, y);
-                            g.drawLine(x + w, y + 2, x + w, y + h - 1);
-                        }
-
-                        g.setColor(_unselectColor2);
-                        g.drawLine(x, y + 2, x + 2, y); // top-left
-
-                        if (tabIndex == _tabPane.getTabCount() - 1) {
-                            g.drawLine(x + w - 3, y, x + w - 1, y + 2);
-                        }
-                        else {
-                            g.drawLine(x + w - 2, y, x + w, y + 2);
-                        }
-                    }
-                    else if (tabIndex < _tabPane.getSelectedIndex()) {
-                        g.setColor(_unselectColor1);
-                        g.drawLine(x, y + h - 1, x, y + 2);
-                        g.drawLine(x + 2, y, x + w - 2, y);
-                        g.drawLine(x + w, y + 2, x + w, y + h - 1);
-
-                        g.setColor(_unselectColor2);
-                        g.drawLine(x, y + 2, x + 2, y);
-                        g.drawLine(x + w - 2, y, x + w, y + 2);
-                    }
-                }
-        }
-    }
 
     protected void paintBoxTabBorder(Graphics g, int tabPlacement, int tabIndex,
                                      int x, int y, int w, int h, boolean isSelected) {
@@ -3753,406 +1473,9 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
             return;
         }
 
-        switch (getTabShape()) {
-            case JideTabbedPane.SHAPE_BOX:
-                paintButtonTabBackground(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_EXCEL:
-                paintExcelTabBackground(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_WINDOWS:
-                paintDefaultTabBackground(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_WINDOWS_SELECTED:
-                if (isSelected) {
-                    paintDefaultTabBackground(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                }
-                break;
-            case JideTabbedPane.SHAPE_VSNET:
-            case JideTabbedPane.SHAPE_ROUNDED_VSNET:
-                paintVsnetTabBackground(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_FLAT:
-            case JideTabbedPane.SHAPE_ROUNDED_FLAT:
-                paintFlatTabBackground(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-                break;
-            case JideTabbedPane.SHAPE_OFFICE2003:
-            default:
-                paintOffice2003TabBackground(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
-        }
-
+        paintButtonTabBackground(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
     }
 
-    @SuppressWarnings({"UnusedDeclaration"})
-    protected void paintOffice2003TabBackground(Graphics g, int tabPlacement,
-                                                int tabIndex, int x, int y, int w, int h, boolean isSelected) {
-        boolean leftToRight = _tabPane.getComponentOrientation().isLeftToRight();
-        switch (tabPlacement) {
-            case LEFT:
-                if (tabIndex != 0 && !isSelected) {
-                    int xp[] = {x + w, x + 4, x + 2, x, x, x + 3, x + w};
-                    int yp[] = {y, y, y + 2, y + 5, y + h - 5, y + h - 2, y + h - 2};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                else {// tabIndex != 0
-                    int xp[] = {x + w, x + 2, x, x, x + 3, x + w};
-                    int yp[] = {y - w + 2 + 2, y + 2, y + 5, y + h - 5, y + h - 2, y + h - 2};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                break;
-            case RIGHT:
-                if (tabIndex != 0 && !isSelected) {
-                    int xp[] = {x, x + w - 4, x + w - 3, x + w - 1, x + w - 1, x + w - 3, x};
-                    int yp[] = {y, y, y + 2, y + 5, y + h - 5, y + h - 2, y + h - 2};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                else {
-                    int xp[] = {x, x + w - 3, x + w - 1, x + w - 1, x + w - 3, x};
-                    int yp[] = {y - w + 2 + 2, y + 2, y + 5, y + h - 5, y + h - 2, y + h - 2};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                break;
-            case BOTTOM:
-                if (leftToRight) {
-                    int xp[] = {x - (tabIndex == 0 || isSelected ? h - 5 : 0), x, x + 4, x + w - 3, x + w - 1, x + w - 1};
-                    int yp[] = {y, y + h - 5, y + h - 1, y + h - 1, y + h - 5, y};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                else {
-                    int xp[] = {x, x, x + 2, x + w - 5, x + w - 1, x + w - 1 + (tabIndex == 0 || isSelected ? h - 5 : 0)};
-                    int yp[] = {y, y + h - 5, y + h - 1, y + h - 1, y + h - 5, y};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                break;
-            case TOP:
-            default:
-                if (leftToRight) {
-                    int xp[] = {x - (tabIndex == 0 || isSelected ? h - 5 : 0), x, x + 4, x + w - 3, x + w - 1, x + w - 1};
-                    int yp[] = {y + h, y + 3, y + 1, y + 1, y + 3, y + h};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                else {
-                    int xp[] = {x, x, x + 2, x + w - 5, x + w - 1, x + w - 1 + (tabIndex == 0 || isSelected ? h - 5 : 0)};
-                    int yp[] = {y + h, y + 3, y + 1, y + 1, y + 3, y + h};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-        }
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    protected void paintExcelTabBackground(Graphics g, int tabPlacement,
-                                           int tabIndex, int x, int y, int w, int h, boolean isSelected) {
-        boolean leftToRight = _tabPane.getComponentOrientation().isLeftToRight();
-        switch (tabPlacement) {
-            case LEFT:
-                if (!isSelected) {
-                    if ((leftToRight && tabIndex == 0) || (!leftToRight && tabIndex == _tabPane.getTabCount() - 1)) {
-                        int xp[] = {x + w, x, x, x + w};
-                        int yp[] = {y - 5, y + 5, y + h - 5, y + h + 6};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                    else {
-                        int xp[] = {x + w, x + 9, x, x, x + w};
-                        int yp[] = {y + 8, y + 2, y + 6, y + h - 5, y + h + 6};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                }
-                else {
-                    int xp[] = {x + w, x, x, x + w};
-                    int yp[] = {y - 5, y + 5, y + h - 5, y + h + 6};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                break;
-            case RIGHT:
-                if (!isSelected) {
-                    if ((leftToRight && tabIndex == 0) || (!leftToRight && tabIndex == _tabPane.getTabCount() - 1)) {
-                        int xp[] = {x, x + w - 1, x + w - 1, x};
-                        int yp[] = {y - 5, y + 5, y + h - 5, y + h + 6};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                    else {
-                        int xp[] = {x, x + w - 10, x + w - 1, x + w - 1, x};
-                        int yp[] = {y + 8, y + 2, y + 6, y + h - 5,
-                                y + h + 6};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                }
-                else {
-                    int xp[] = {x, x + w - 1, x + w - 1, x};
-                    int yp[] = {y - 5, y + 5, y + h - 4, y + h + 6};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                break;
-            case BOTTOM:
-                if (!isSelected) {
-                    if ((leftToRight && tabIndex == 0) || (!leftToRight && tabIndex == _tabPane.getTabCount() - 1)) {
-                        int xp[] = {x - 5, x + 5, x + w - 5, x + w + 5};
-                        int yp[] = {y, y + h - 1, y + h - 1, y};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                    else {
-                        int xp[] = {x + 7, x + 1, x + 5, x + w - 5, x + w + 5};
-                        int yp[] = {y, y + h - 10, y + h - 1, y + h - 1, y};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                }
-                else {
-                    int xp[] = {x - 5, x + 5, x + w - 5, x + w + 5};
-                    int yp[] = {y, y + h - 1, y + h - 1, y};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                break;
-            case TOP:
-            default:
-                if (!isSelected) {
-                    if ((leftToRight && tabIndex == 0) || (!leftToRight && tabIndex == _tabPane.getTabCount() - 1)) {
-                        int xp[] = {x - 6, x + 5, x + w - 5, x + w + 5};
-                        int yp[] = {y + h, y, y, y + h};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                    else {
-                        int xp[] = {x + 7, x + 1, x + 6, x + w - 5, x + w + 5};
-                        int yp[] = {y + h, y + 9, y, y, y + h};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                }
-                else {
-                    int xp[] = {x - 6, x + 5, x + w - 5, x + w + 5};
-                    int yp[] = {y + h, y, y, y + h};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-        }
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    protected void paintDefaultTabBackground(Graphics g, int tabPlacement,
-                                             int tabIndex, int x, int y, int w, int h, boolean isSelected) {
-        switch (tabPlacement) {
-            case LEFT:
-                if (isSelected) {
-                    x = x + 1;
-                    int xp[] = {x + w, x, x - 2, x - 2, x + w};
-                    int yp[] = {y - 1, y - 1, y + 1, y + h + 2, y + h + 2};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                else {
-                    if (tabIndex < _tabPane.getSelectedIndex()) {
-                        y = y + 1;
-                        int xp[] = {x + w, x + 2, x, x, x + w};
-                        int yp[] = {y + 1, y + 1, y + 3, y + h - 1,
-                                y + h - 1};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                    else {
-                        int xp[] = {x + w, x + 2, x, x, x + w};
-                        int yp[] = {y + 1, y + 1, y + 3, y + h - 2,
-                                y + h - 2};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                }
-                break;
-            case RIGHT:
-                if (isSelected) {
-
-                    int xp[] = {x, x + w - 1, x + w, x + w, x};
-                    int yp[] = {y - 1, y - 1, y + 1, y + h + 2, y + h + 2};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                else {
-                    if (tabIndex < _tabPane.getSelectedIndex()) {
-                        y = y + 1;
-                        int xp[] = {x, x + w - 3, x + w - 1, x + w - 1, x};
-                        int yp[] = {y + 1, y + 1, y + 3, y + h - 1,
-                                y + h - 1};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                    else {
-                        int xp[] = {x, x + w - 2, x + w - 1, x + w - 1, x};
-                        int yp[] = {y + 1, y + 1, y + 3, y + h - 2,
-                                y + h - 2};
-                        int np = yp.length;
-                        tabRegion = new Polygon(xp, yp, np);
-                    }
-                }
-                break;
-            case BOTTOM:
-                if (isSelected) {
-                    int xp[] = {x, x, x + 2, x + w + 2, x + w + 2};
-                    int yp[] = {y + h, y, y - 2, y - 2, y + h};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                else {
-                    int xp[] = {x + 1, x + 1, x + 1, x + w - 1, x + w - 1};
-                    int yp[] = {y + h - 1, y + 2, y, y, y + h - 1};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                break;
-            case TOP:
-            default:
-                if (isSelected) {
-                    int xp[] = {x, x, x + 2, x + w + 2, x + w + 2};
-                    int yp[] = {y + h + 1, y, y - 2, y - 2, y + h + 1};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-                else {
-                    int xp[] = {x + 1, x + 1, x + 3, x + w - 1, x + w - 1};
-                    int yp[] = {y + h, y + 2, y, y, y + h};
-                    int np = yp.length;
-                    tabRegion = new Polygon(xp, yp, np);
-                }
-        }
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    protected void paintTabBackgroundMouseOver(Graphics g, int tabPlacement, int tabIndex,
-                                               int x, int y, int w, int h, boolean isSelected, Color backgroundUnselectedColorStart, Color backgroundUnselectedColorEnd) {
-        Graphics2D g2d = (Graphics2D) g;
-
-        Polygon polygon;
-
-        switch (tabPlacement) {
-            case LEFT:
-                if (tabIndex < _tabPane.getSelectedIndex()) {
-
-                    int xp[] = {x + w, x + 2, x, x, x + 2, x + w};
-                    int yp[] = {y + 2, y + 2, y + 4, y + h - 1, y + h,
-                            y + h};
-                    int np = yp.length;
-                    polygon = new Polygon(xp, yp, np);
-
-                }
-                else {// tabIndex > _tabPane.getSelectedIndex()
-
-                    int xp[] = {x + w, x + 2, x, x, x + 2, x + w};
-                    int yp[] = {y + 1, y + 1, y + 3, y + h - 3,
-                            y + h - 2, y + h - 2};
-                    int np = yp.length;
-                    polygon = new Polygon(xp, yp, np);
-
-                }
-                JideSwingUtilities.fillGradient(g2d, polygon, backgroundUnselectedColorStart, backgroundUnselectedColorEnd, false);
-                break;
-            case RIGHT:
-                if (tabIndex < _tabPane.getSelectedIndex()) {
-                    int xp[] = {x, x + w - 3, x + w - 1, x + w - 1,
-                            x + w - 3, x};
-                    int yp[] = {y + 2, y + 2, y + 4, y + h - 1, y + h,
-                            y + h};
-                    int np = yp.length;
-                    polygon = new Polygon(xp, yp, np);
-                }
-                else {
-                    int xp[] = {x, x + w - 2, x + w - 1, x + w - 1,
-                            x + w - 3, x};
-                    int yp[] = {y + 1, y + 1, y + 3, y + h - 3,
-                            y + h - 2, y + h - 2};
-                    int np = yp.length;
-                    polygon = new Polygon(xp, yp, np);
-                }
-                JideSwingUtilities.fillGradient(g2d, polygon, backgroundUnselectedColorEnd, backgroundUnselectedColorStart, false);
-                break;
-            case BOTTOM:
-                int xp[] = {x + 1, x + 1, x + 1, x + w - 1, x + w - 1};
-                int yp[] = {y + h - 2, y + 2, y, y, y + h - 2};
-                int np = yp.length;
-                polygon = new Polygon(xp, yp, np);
-                JideSwingUtilities.fillGradient(g2d, polygon, backgroundUnselectedColorEnd, backgroundUnselectedColorStart, true);
-                break;
-            case TOP:
-            default:
-                int xp1[] = {x + 1, x + 1, x + 3, x + w - 1, x + w - 1};
-                int yp1[] = {y + h, y + 2, y, y, y + h};
-                int np1 = yp1.length;
-                polygon = new Polygon(xp1, yp1, np1);
-                JideSwingUtilities.fillGradient(g2d, polygon, backgroundUnselectedColorStart, backgroundUnselectedColorEnd, true);
-        }
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    protected void paintVsnetTabBackground(Graphics g, int tabPlacement,
-                                           int tabIndex, int x, int y, int w, int h, boolean isSelected) {
-        int xp[];
-        int yp[];
-        switch (tabPlacement) {
-            case LEFT:
-                xp = new int[]{x + 1, x + 1, x + w, x + w};
-                yp = new int[]{y + h - 1, y + 1, y + 1, y + h - 1};
-                break;
-            case RIGHT:
-                xp = new int[]{x, x, x + w - 1, x + w - 1};
-                yp = new int[]{y + h - 1, y + 1, y + 1, y + h - 1};
-                break;
-            case BOTTOM:
-                xp = new int[]{x + 1, x + 1, x + w - 1, x + w - 1};
-                yp = new int[]{y + h - 1, y, y, y + h - 1};
-                break;
-            case TOP:
-            default:
-                xp = new int[]{x + 1, x + 1, x + w - 1, x + w - 1};
-                yp = new int[]{y + h, y + 1, y + 1, y + h};
-                break;
-        }
-        int np = yp.length;
-        tabRegion = new Polygon(xp, yp, np);
-    }
-
-    @SuppressWarnings({"UnusedDeclaration"})
-    protected void paintFlatTabBackground(Graphics g, int tabPlacement, int tabIndex, int x, int y, int w, int h, boolean isSelected) {
-        switch (tabPlacement) {
-            case LEFT:
-                int xp1[] = {x + 1, x + 1, x + w, x + w};
-                int yp1[] = {y + h, y + 1, y + 1, y + h};
-                int np1 = yp1.length;
-                tabRegion = new Polygon(xp1, yp1, np1);
-                break;
-            case RIGHT:
-                int xp2[] = {x, x, x + w - 1, x + w - 1};
-                int yp2[] = {y + h, y + 1, y + 1, y + h};
-                int np2 = yp2.length;
-                tabRegion = new Polygon(xp2, yp2, np2);
-                break;
-            case BOTTOM:
-                int xp3[] = {x + 1, x + 1, x + w, x + w};
-                int yp3[] = {y + h - 1, y, y, y + h - 1};
-                int np3 = yp3.length;
-                tabRegion = new Polygon(xp3, yp3, np3);
-                break;
-            case TOP:
-            default:
-                int xp4[] = {x, x + 1, x + w, x + w};
-                int yp4[] = {y + h, y + 1, y + 1, y + h};
-                int np4 = yp4.length;
-                tabRegion = new Polygon(xp4, yp4, np4);
-        }
-    }
 
     @SuppressWarnings({"UnusedDeclaration"})
     protected void paintButtonTabBackground(Graphics g, int tabPlacement,
@@ -4286,7 +1609,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
     }
 
     protected Color getBorderEdgeColor() {
-        if ("true".equals(SecurityUtils.getProperty("shadingtheme", "false"))) {
+        if ("true".equals(System.getProperty("shadingtheme", "false"))) {
             return _shadow;
         }
         else {
@@ -4448,9 +1771,6 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                             bounds = new Rectangle(_rects[i].x + _rects[i].width - size.width - _closeButtonRightMargin,
                                     _rects[i].y + (_rects[i].height - size.height) / 2, size.width, size.height);
                             bounds.x -= getTabGap();
-                            if (i > _tabPane.getSelectedIndex() && (JideTabbedPane.SHAPE_ROUNDED_VSNET == _tabPane.getTabShape() || JideTabbedPane.SHAPE_VSNET == _tabPane.getTabShape())) {
-                                bounds.x--;
-                            }
                         }
                         else {
                             bounds = new Rectangle(_rects[i].x + _closeButtonLeftMargin + getTabGap(), _rects[i].y + (_rects[i].height - size.height) / 2, size.width, size.height);
@@ -4750,8 +2070,6 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
         return dest;
     }
 
-    // VsnetJideTabbedPaneUI methods
-
     protected Component getVisibleComponent() {
         return visibleComponent;
     }
@@ -4846,7 +2164,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
 
     protected int calculateTabHeight(int tabPlacement, int tabIndex, FontMetrics metrics) {
         int height = 0;
-        Component c = SystemInfo.isJdk6Above() ? _tabPane.getTabComponentAt(tabIndex) : null;
+        Component c = _tabPane.getTabComponentAt(tabIndex);
         if (c != null) {
             height = c.getPreferredSize().height;
             return height;
@@ -4925,7 +2243,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
             Icon icon = _tabPane.getIconForTab(tabIndex);
             Insets tabInsets = getTabInsets(tabPlacement, tabIndex);
             width = tabInsets.left + tabInsets.right + 3 + getTabGap();
-            Component tabComponent = SystemInfo.isJdk6Above() ? _tabPane.getTabComponentAt(tabIndex) : null;
+            Component tabComponent = _tabPane.getTabComponentAt(tabIndex);
             if (tabComponent != null) {
                 width += tabComponent.getPreferredSize().width;
                 return width;
@@ -4966,7 +2284,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
 //            width += _tabRectPadding;
         }
         else {
-            Component tabComponent = SystemInfo.isJdk6Above() ? _tabPane.getTabComponentAt(tabIndex) : null;
+            Component tabComponent = _tabPane.getTabComponentAt(tabIndex);
             if (tabComponent != null) {
                 Insets tabInsets = getTabInsets(tabPlacement, tabIndex);
                 width = tabComponent.getPreferredSize().width + tabInsets.left + tabInsets.right + 3;
@@ -5508,7 +2826,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                         mnemonic -= ('a' - 'A');
                     }
                     Integer index = (Integer) ui._mnemonicToIndexMap
-                            .get(new Integer(mnemonic));
+                            .get(mnemonic);
                     if (index != null && pane.isEnabledAt(index)) {
                         pane.setSelectedIndex(index);
                     }
@@ -5786,7 +3104,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
 
     /**
      * This inner class is marked &quot;public&quot; due to a compiler bug. This class should be treated as a
-     * &quot;protected&quot; inner class. Instantiate it only within subclasses of VsnetJideTabbedPaneUI.
+     * &quot;protected&quot; inner class. Instantiate it only within subclasses of BasicJideTabbedPaneUI.
      */
     public class TabbedPaneLayout implements LayoutManager {
         public void addLayoutComponent(String name, Component comp) {
@@ -6074,7 +3392,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                 translatePointToTabPanel(0, 0, delta);
             }
             for (int i = 0; i < _tabPane.getTabCount(); i++) {
-                Component c = SystemInfo.isJdk6Above() ? _tabPane.getTabComponentAt(i) : null;
+                Component c = _tabPane.getTabComponentAt(i);
                 if (c == null) {
                     continue;
                 }
@@ -7218,7 +4536,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                             rect.x = x;
                         }
                     }
-                    rect.width = calculateTabWidth(tabPlacement, i, metrics) + _rectSizeExtend;
+                    rect.width = calculateTabWidth(tabPlacement, i, metrics);
                     _maxTabWidth = Math.max(_maxTabWidth, rect.width);
 
                     rect.y = y;
@@ -7230,9 +4548,6 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                                 rect.y = y + lsize.height - _maxTabHeight - 2;
                                 temp = lsize.height;
 
-                                if (_rectSizeExtend > 0) {
-                                    rect.y = rect.y + 2;
-                                }
                             }
 
                         }
@@ -7243,9 +4558,6 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                                     && temp < tsize.height) {
                                 rect.y = y + tsize.height - _maxTabHeight - 2;
 
-                                if (_rectSizeExtend > 0) {
-                                    rect.y = rect.y + 2;
-                                }
                             }
 
                         }
@@ -7260,14 +4572,9 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                     else {
                         _tabRuns[0] = 0;
                         _maxTabHeight = 0;
-                        if (getTabShape() != JideTabbedPane.SHAPE_BOX) {
-                            rect.y = y + getLeftMargin();// give the first tab arrow angle extra space
-                        }
-                        else {
-                            rect.y = y;
-                        }
+                        rect.y = y;
                     }
-                    rect.height = calculateTabHeight(tabPlacement, i, metrics) + _rectSizeExtend;
+                    rect.height = calculateTabHeight(tabPlacement, i, metrics);
                     _maxTabHeight = Math.max(_maxTabHeight, rect.height);
 
                     rect.x = x;
@@ -7278,9 +4585,6 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                                 rect.x = x + lsize.width - _maxTabWidth - 2;
                                 temp = lsize.width;
 
-                                if (_rectSizeExtend > 0) {
-                                    rect.x = rect.x + 2;
-                                }
                             }
 
                         }
@@ -7291,9 +4595,6 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                                     && temp < tsize.width) {
                                 rect.x = x + tsize.width - _maxTabWidth - 2;
 
-                                if (_rectSizeExtend > 0) {
-                                    rect.x = rect.x + 2;
-                                }
                             }
 
                         }
@@ -7501,7 +4802,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
         if (getTabResizeMode() == JideTabbedPane.RESIZE_MODE_FIXED) {// LayOut Style is Fix
             if (verticalTabRuns) {
                 for (int k = 0; k < tabCount; k++) {
-                    _rects[k].height = _fixedStyleRectSize;// + _rectSizeExtend * 2;
+                    _rects[k].height = _fixedStyleRectSize;
 
                     if (isShowCloseButton() && _tabPane.isShowCloseButtonOnTab()) {
                         _rects[k].height += _closeButtons[k].getPreferredSize().height;
@@ -7921,10 +5222,8 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                 }
             }
 
-            if (SystemInfo.isJdk15Above()) {
-                _tabPane.setComponentZOrder(_tabScroller.scrollForwardButton, 0);
-                _tabPane.setComponentZOrder(_tabScroller.scrollBackwardButton, 0);
-            }
+            _tabPane.setComponentZOrder(_tabScroller.scrollForwardButton, 0);
+            _tabPane.setComponentZOrder(_tabScroller.scrollBackwardButton, 0);
             _tabScroller.scrollForwardButton.repaint();
             _tabScroller.scrollBackwardButton.repaint();
 
@@ -8422,7 +5721,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
 
     /**
      * This inner class is marked &quot;public&quot; due to a compiler bug. This class should be treated as a
-     * &quot;protected&quot; inner class. Instantiate it only within subclasses of VsnetJideTabbedPaneUI.
+     * &quot;protected&quot; inner class. Instantiate it only within subclasses of BasicJideTabbedPaneUI.
      */
     public class PropertyChangeHandler implements PropertyChangeListener {
         public void propertyChange(PropertyChangeEvent e) {
@@ -8464,7 +5763,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                 if (_tabContainer != null) {
                     _tabContainer.removeUnusedTabComponents();
                 }
-                Component c = SystemInfo.isJdk6Above() ? _tabPane.getTabComponentAt((Integer) e.getNewValue()) : null;
+                Component c = _tabPane.getTabComponentAt((Integer) e.getNewValue());
                 if (c != null) {
                     if (_tabContainer == null) {
                         installTabContainer();
@@ -8570,7 +5869,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
 
     /**
      * This inner class is marked &quot;public&quot; due to a compiler bug. This class should be treated as a
-     * &quot;protected&quot; inner class. Instantiate it only within subclasses of VsnetJideTabbedPaneUI.
+     * &quot;protected&quot; inner class. Instantiate it only within subclasses of BasicJideTabbedPaneUI.
      */
     public class TabSelectionHandler implements ChangeListener {
         public void stateChanged(ChangeEvent e) {
@@ -8610,7 +5909,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
 
     /**
      * This inner class is marked &quot;public&quot; due to a compiler bug. This class should be treated as a
-     * &quot;protected&quot; inner class. Instantiate it only within subclasses of VsnetJideTabbedPaneUI.
+     * &quot;protected&quot; inner class. Instantiate it only within subclasses of BasicJideTabbedPaneUI.
      */
     public class MouseHandler extends MouseAdapter {
         @Override
@@ -8652,42 +5951,15 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                         }
                         _tabPane.processMouseSelection(tabIndex, e);
                         final Component comp = _tabPane.getComponentAt(tabIndex);
-                        if (_tabPane.isAutoFocusOnTabHideClose() && comp != null && !comp.isVisible() && SystemInfo.isJdk15Above() && !SystemInfo.isJdk6Above()) {
-                            comp.addComponentListener(new ComponentAdapter() {
-                                @Override
-                                public void componentShown(ComponentEvent e) {
-                                    // remove the listener
-                                    comp.removeComponentListener(this);
-
-                                    Component lastFocused = _tabPane.getLastFocusedComponent(comp);
-                                    if (lastFocused != null) {
-                                        // this code works in JDK6 but on JDK5
-//                                        if (!lastFocused.requestFocusInWindow()) {
-                                        lastFocused.requestFocus();
-//                                        }
-                                    }
-                                    else if (_tabPane.isRequestFocusEnabled()) {
-//                                        if (!_tabPane.requestFocusInWindow()) {
-                                        _tabPane.requestFocus();
-//                                        }
-                                    }
-                                }
-                            });
+                        Component lastFocused = _tabPane.getLastFocusedComponent(comp);
+                        if (lastFocused != null) {
+                            lastFocused.requestFocus();
                         }
                         else {
-                            Component lastFocused = _tabPane.getLastFocusedComponent(comp);
-                            if (lastFocused != null) {
-                                // this code works in JDK6 but on JDK5
-//                                if (!lastFocused.requestFocusInWindow()) {
-                                lastFocused.requestFocus();
-//                                }
-                            }
-                            else {
-                                // first try to find a default component.
-                                boolean foundInTab = JideSwingUtilities.compositeRequestFocus(comp);
-                                if (!foundInTab) { // && !_tabPane.requestFocusInWindow()) {
-                                    _tabPane.requestFocus();
-                                }
+                            // first try to find a default component.
+                            boolean foundInTab = JideSwingUtilities.compositeRequestFocus(comp);
+                            if (!foundInTab) {
+                                _tabPane.requestFocus();
                             }
                         }
                     }
@@ -9608,11 +6880,11 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
     }
 
     protected boolean isRoundedCorner() {
-        return "true".equals(SecurityUtils.getProperty("shadingtheme", "false"));
+        return "true".equals(System.getProperty("shadingtheme", "false"));
     }
 
     protected int getTabShape() {
-        return _tabPane.getTabShape();
+        return JideTabbedPane.SHAPE_BOX;
     }
 
     protected int getTabResizeMode() {
@@ -9620,7 +6892,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
     }
 
     protected int getColorTheme() {
-        return _tabPane.getColorTheme();
+        return JideTabbedPane.COLOR_THEME_DEFAULT;
     }
 
     // for debug purpose
@@ -9637,57 +6909,23 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
     final protected boolean PAINT_CONTENT_BORDER_EDGE = true;
 
     protected int getLeftMargin() {
-        if (getTabShape() == JideTabbedPane.SHAPE_OFFICE2003) {
-            return OFFICE2003_LEFT_MARGIN;
-        }
-        else if (getTabShape() == JideTabbedPane.SHAPE_EXCEL) {
-            return EXCEL_LEFT_MARGIN;
-        }
-        else {
-            return DEFAULT_LEFT_MARGIN;
-        }
+        return DEFAULT_LEFT_MARGIN;
     }
 
     protected int getTabGap() {
-        if (getTabShape() == JideTabbedPane.SHAPE_OFFICE2003) {
-            return 4;
-        }
-        else {
-            return 0;
-        }
+        return 0;
     }
 
     protected int getLayoutSize() {
-        int tabShape = getTabShape();
-        if (tabShape == JideTabbedPane.SHAPE_EXCEL) {
-            return EXCEL_LEFT_MARGIN;
-        }
-        else if (tabShape == JideTabbedPane.SHAPE_ECLIPSE3X) {
-            return 15;
-        }
-        else if (_tabPane.getTabShape() == JideTabbedPane.SHAPE_FLAT || _tabPane.getTabShape() == JideTabbedPane.SHAPE_ROUNDED_FLAT) {
-            return 2;
-        }
-        else if (tabShape == JideTabbedPane.SHAPE_WINDOWS
-                || tabShape == JideTabbedPane.SHAPE_WINDOWS_SELECTED) {
-            return 6;
-        }
-        else {
-            return 0;
-        }
+        return 0;
     }
 
     protected int getTabRightPadding() {
-        if (getTabShape() == JideTabbedPane.SHAPE_EXCEL) {
-            return 4;
-        }
-        else {
-            return 0;
-        }
+        return 0;
     }
 
     protected MouseListener createMouseListener() {
-        if (getTabShape() == JideTabbedPane.SHAPE_WINDOWS || getTabShape() == JideTabbedPane.SHAPE_WINDOWS_SELECTED || _tabPane.isShowCloseButtonOnMouseOver()) {
+        if (_tabPane.isShowCloseButtonOnMouseOver()) {
             return new RolloverMouseHandler();
         }
         else {
@@ -9700,7 +6938,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
     }
 
     protected MouseMotionListener createMouseMotionListener() {
-        if (getTabShape() == JideTabbedPane.SHAPE_WINDOWS || getTabShape() == JideTabbedPane.SHAPE_WINDOWS_SELECTED || _tabPane.isShowCloseButtonOnMouseOver()) {
+        if (_tabPane.isShowCloseButtonOnMouseOver()) {
             return new RolloverMouseMotionHandler();
         }
         else {

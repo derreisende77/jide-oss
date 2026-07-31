@@ -14,8 +14,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeListener;
 import java.lang.reflect.Field;
 
+import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
@@ -28,12 +30,12 @@ import javax.swing.plaf.basic.BasicSliderUI;
 
 import com.jidesoft.swing.RangeSlider;
 
-import sun.swing.UIAction;
-
 /**
  * BasicRangeSliderUI implementation
  */
 public class BasicRangeSliderUI extends BasicSliderUI {
+    private PropertyChangeListener _componentOrientationListener;
+
     public BasicRangeSliderUI(JSlider slider) {
         super(slider);
     }
@@ -49,6 +51,17 @@ public class BasicRangeSliderUI extends BasicSliderUI {
     protected void installKeyboardActions( JSlider slider ) {
         super.installKeyboardActions(slider);
         installAdditionalKeyboardActions(slider);
+        _componentOrientationListener = evt -> installAdditionalKeyboardActions(slider);
+        slider.addPropertyChangeListener("componentOrientation", _componentOrientationListener);
+    }
+
+    @Override
+    protected void uninstallKeyboardActions(JSlider slider) {
+        if (_componentOrientationListener != null) {
+            slider.removePropertyChangeListener("componentOrientation", _componentOrientationListener);
+            _componentOrientationListener = null;
+        }
+        super.uninstallKeyboardActions(slider);
     }
 
     protected void installAdditionalKeyboardActions(JSlider slider) {
@@ -56,20 +69,22 @@ public class BasicRangeSliderUI extends BasicSliderUI {
         final ActionMap am = SwingUtilities.getUIActionMap(slider);
 
         final Actions actionPositiveUnitIncrementUpper = new Actions(Actions.POSITIVE_UNIT_INCREMENT_UPPER);
+        final Actions actionPositiveHorizontalUnitIncrementUpper = new Actions(Actions.POSITIVE_HORIZONTAL_UNIT_INCREMENT_UPPER);
         final Actions actionPositiveBlockIncrementUpper = new Actions(Actions.POSITIVE_BLOCK_INCREMENT_UPPER);
         final Actions actionNegativeUnitIncrementUpper = new Actions(Actions.NEGATIVE_UNIT_INCREMENT_UPPER);
+        final Actions actionNegativeHorizontalUnitIncrementUpper = new Actions(Actions.NEGATIVE_HORIZONTAL_UNIT_INCREMENT_UPPER);
         final Actions actionNegativeBlockIncrementUpper = new Actions(Actions.NEGATIVE_BLOCK_INCREMENT_UPPER);
         final Actions actionMinScrollIncrementUpper = new Actions(Actions.MIN_SCROLL_INCREMENT_UPPER);
         final Actions actionMaxScrollIncrementUpper = new Actions(Actions.MAX_SCROLL_INCREMENT_UPPER);
 
-        registerAction(actionPositiveUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.SHIFT_DOWN_MASK), km, am);
-        registerAction(actionPositiveUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_KP_RIGHT, InputEvent.SHIFT_DOWN_MASK), km, am);
+        registerAction(actionPositiveHorizontalUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, InputEvent.SHIFT_DOWN_MASK), km, am);
+        registerAction(actionPositiveHorizontalUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_KP_RIGHT, InputEvent.SHIFT_DOWN_MASK), km, am);
         registerAction(actionPositiveUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_UP, InputEvent.SHIFT_DOWN_MASK), km, am);
         registerAction(actionPositiveUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_KP_UP, InputEvent.SHIFT_DOWN_MASK), km, am);
         registerAction(actionPositiveBlockIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_UP, InputEvent.SHIFT_DOWN_MASK), km, am);
 
-        registerAction(actionNegativeUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.SHIFT_DOWN_MASK), km, am);
-        registerAction(actionNegativeUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_KP_LEFT, InputEvent.SHIFT_DOWN_MASK), km, am);
+        registerAction(actionNegativeHorizontalUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, InputEvent.SHIFT_DOWN_MASK), km, am);
+        registerAction(actionNegativeHorizontalUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_KP_LEFT, InputEvent.SHIFT_DOWN_MASK), km, am);
         registerAction(actionNegativeUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, InputEvent.SHIFT_DOWN_MASK), km, am);
         registerAction(actionNegativeUnitIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_KP_DOWN, InputEvent.SHIFT_DOWN_MASK), km, am);
         registerAction(actionNegativeBlockIncrementUpper, KeyStroke.getKeyStroke(KeyEvent.VK_PAGE_DOWN, InputEvent.SHIFT_DOWN_MASK), km, am);
@@ -83,53 +98,66 @@ public class BasicRangeSliderUI extends BasicSliderUI {
         am.put(action.getValue(Action.NAME), action);
     }
 
-    private static class Actions extends UIAction {
+    private static class Actions extends AbstractAction {
         public static final String POSITIVE_UNIT_INCREMENT_UPPER =
                 "positiveUnitIncrementUpper";
+        public static final String POSITIVE_HORIZONTAL_UNIT_INCREMENT_UPPER =
+                "positiveHorizontalUnitIncrementUpper";
         public static final String POSITIVE_BLOCK_INCREMENT_UPPER =
                 "positiveBlockIncrementUpper";
         public static final String NEGATIVE_UNIT_INCREMENT_UPPER =
                 "negativeUnitIncrementUpper";
+        public static final String NEGATIVE_HORIZONTAL_UNIT_INCREMENT_UPPER =
+                "negativeHorizontalUnitIncrementUpper";
         public static final String NEGATIVE_BLOCK_INCREMENT_UPPER =
                 "negativeBlockIncrementUpper";
         public static final String MIN_SCROLL_INCREMENT_UPPER = "minScrollUpper";
         public static final String MAX_SCROLL_INCREMENT_UPPER = "maxScrollUpper";
 
-        Actions() {
-            super(null);
-        }
-
         public Actions(String name) {
             super(name);
         }
 
+        @Override
         public void actionPerformed(ActionEvent evt) {
             RangeSlider rangeSlider = (RangeSlider)evt.getSource();
             BasicSliderUI ui = (BasicSliderUI) getUIOfType(rangeSlider.getUI(), BasicSliderUI.class);
-            String name = getName();
+            String name = (String) getValue(Action.NAME);
 
             if (ui == null) {
                 return;
             }
 
             try {
-                if (POSITIVE_UNIT_INCREMENT_UPPER == name) {
+                if (POSITIVE_UNIT_INCREMENT_UPPER.equals(name)) {
                     scroll(rangeSlider, ui, POSITIVE_SCROLL, false);
-                } else if (NEGATIVE_UNIT_INCREMENT_UPPER == name) {
+                } else if (POSITIVE_HORIZONTAL_UNIT_INCREMENT_UPPER.equals(name)) {
+                    scroll(rangeSlider, ui, horizontalDirection(rangeSlider, POSITIVE_SCROLL), false);
+                } else if (NEGATIVE_UNIT_INCREMENT_UPPER.equals(name)) {
                     scroll(rangeSlider, ui, NEGATIVE_SCROLL, false);
-                } else if (POSITIVE_BLOCK_INCREMENT_UPPER == name) {
+                } else if (NEGATIVE_HORIZONTAL_UNIT_INCREMENT_UPPER.equals(name)) {
+                    scroll(rangeSlider, ui, horizontalDirection(rangeSlider, NEGATIVE_SCROLL), false);
+                } else if (POSITIVE_BLOCK_INCREMENT_UPPER.equals(name)) {
                     scroll(rangeSlider, ui, POSITIVE_SCROLL, true);
-                } else if (NEGATIVE_BLOCK_INCREMENT_UPPER == name) {
+                } else if (NEGATIVE_BLOCK_INCREMENT_UPPER.equals(name)) {
                     scroll(rangeSlider, ui, NEGATIVE_SCROLL, true);
-                } else if (MIN_SCROLL_INCREMENT_UPPER == name) {
+                } else if (MIN_SCROLL_INCREMENT_UPPER.equals(name)) {
                     scroll(rangeSlider, ui, MIN_SCROLL, false);
-                } else if (MAX_SCROLL_INCREMENT_UPPER == name) {
+                } else if (MAX_SCROLL_INCREMENT_UPPER.equals(name)) {
                     scroll(rangeSlider, ui, MAX_SCROLL, false);
                 }
             }
             finally {
                 rangeSlider.putClientProperty(RangeSlider.CLIENT_PROPERTY_MOUSE_POSITION, null);
             }
+        }
+
+        private int horizontalDirection(RangeSlider rangeSlider, int direction) {
+            if (rangeSlider.getOrientation() == JSlider.HORIZONTAL &&
+                    !rangeSlider.getComponentOrientation().isLeftToRight()) {
+                return direction == POSITIVE_SCROLL ? NEGATIVE_SCROLL : POSITIVE_SCROLL;
+            }
+            return direction;
         }
 
         private void scroll(RangeSlider rangeSlider, BasicSliderUI ui, int direction,

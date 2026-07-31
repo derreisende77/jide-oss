@@ -13,7 +13,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 /**
- * The icon to paint CheckBox icon safely with any L&F.
+ * The icon to paint CheckBox icon safely with any look and feel.
  *
  * @since 3.3.7
  */

@@ -136,7 +136,7 @@ public class MonthNameConverter implements ObjectConverter {
         MonthNameConverter converter = new MonthNameConverter();
         converter.setDefaultFormat(MonthNameConverter.LONG_FORMAT);
         for (int i = 0; i < 12; i++) {
-            String str = converter.toString(new Integer(i), null);
+            String str = converter.toString(i, null);
             System.out.println(str);
             System.out.println(converter.fromString(str, null));
         }

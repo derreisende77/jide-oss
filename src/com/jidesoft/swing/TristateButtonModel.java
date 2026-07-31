@@ -10,6 +10,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
+import java.awt.event.ItemEvent;
+import java.io.Serial;
 
 
 /**
@@ -17,7 +19,9 @@ import java.awt.event.InputEvent;
  * ActionEvent will be fired when the state is changed.
  */
 public class TristateButtonModel extends JToggleButton.ToggleButtonModel {
+    @Serial
     private static final long serialVersionUID = 9179129427948325126L;
+    private transient boolean _settingMixed;
 
     /**
      * Identifies the "mixed" bit in the bitmask, which indicates that the button is partial selected.
@@ -29,15 +33,10 @@ public class TristateButtonModel extends JToggleButton.ToggleButtonModel {
 
     public void setState(int state) {
         switch (state) {
-            case TristateCheckBox.STATE_UNSELECTED:
-                setSelected(false);
-                break;
-            case TristateCheckBox.STATE_SELECTED:
-                setSelected(true);
-                break;
-            case TristateCheckBox.STATE_MIXED:
-                setMixed(true);
-                break;
+            case TristateCheckBox.STATE_UNSELECTED -> setSelected(false);
+            case TristateCheckBox.STATE_SELECTED -> setSelected(true);
+            case TristateCheckBox.STATE_MIXED -> setMixed(true);
+            default -> throw new IllegalArgumentException("state must be STATE_UNSELECTED, STATE_SELECTED, or STATE_MIXED");
         }
     }
 
@@ -66,15 +65,11 @@ public class TristateButtonModel extends JToggleButton.ToggleButtonModel {
      * @return the next state of the current state.
      */
     protected int getNextState(int current) {
-        if (current == TristateCheckBox.STATE_UNSELECTED) {
-            return TristateCheckBox.STATE_SELECTED;
-        }
-        else if (current == TristateCheckBox.STATE_SELECTED) {
-            return TristateCheckBox.STATE_MIXED;
-        }
-        else /*if (current == STATE_MIXED)*/ {
-            return TristateCheckBox.STATE_UNSELECTED;
-        }
+        return switch (current) {
+            case TristateCheckBox.STATE_UNSELECTED -> TristateCheckBox.STATE_SELECTED;
+            case TristateCheckBox.STATE_SELECTED -> TristateCheckBox.STATE_MIXED;
+            default -> TristateCheckBox.STATE_UNSELECTED;
+        };
     }
 
     @Override
@@ -99,11 +94,11 @@ public class TristateButtonModel extends JToggleButton.ToggleButtonModel {
         if (!isPressed() && isArmed()) {
             int modifiers = 0;
             AWTEvent currentEvent = EventQueue.getCurrentEvent();
-            if (currentEvent instanceof InputEvent) {
-                modifiers = ((InputEvent) currentEvent).getModifiers();
+            if (currentEvent instanceof InputEvent inputEvent) {
+                modifiers = inputEvent.getModifiers();
             }
-            else if (currentEvent instanceof ActionEvent) {
-                modifiers = ((ActionEvent) currentEvent).getModifiers();
+            else if (currentEvent instanceof ActionEvent actionEvent) {
+                modifiers = actionEvent.getModifiers();
             }
             fireActionPerformed(
                     new ActionEvent(this, ActionEvent.ACTION_PERFORMED,
@@ -126,11 +121,18 @@ public class TristateButtonModel extends JToggleButton.ToggleButtonModel {
     @Override
     public void setSelected(boolean b) {
         boolean mixed = isMixed();
+        if (_settingMixed && b) {
+            setMixedState();
+            return;
+        }
         if (mixed) {
             stateMask &= ~MIXED;
-            internalSetSelected(!isSelected());
         }
+        boolean selected = isSelected();
         super.setSelected(b);
+        if (mixed && selected == isSelected()) {
+            fireStateChanged();
+        }
     }
 
     void internalSetSelected(boolean b) {
@@ -152,13 +154,37 @@ public class TristateButtonModel extends JToggleButton.ToggleButtonModel {
         }
 
         if (b) {
-            stateMask |= MIXED;
-            stateMask |= SELECTED;  // make it selected
+            ButtonGroup group = getGroup();
+            if (group != null && !group.isSelected(this)) {
+                _settingMixed = true;
+                try {
+                    group.setSelected(this, true);
+                }
+                finally {
+                    _settingMixed = false;
+                }
+                if (isMixed() || !group.isSelected(this)) {
+                    return;
+                }
+            }
+            setMixedState();
         }
         else {
             stateMask &= ~MIXED;
+            fireStateChanged();
         }
+    }
 
+    private void setMixedState() {
+        boolean selected = isSelected();
+        stateMask |= MIXED;
+        stateMask |= SELECTED;
+        if (!selected) {
+            fireItemStateChanged(new ItemEvent(this,
+                    ItemEvent.ITEM_STATE_CHANGED,
+                    this,
+                    ItemEvent.SELECTED));
+        }
         fireStateChanged();
     }
 }

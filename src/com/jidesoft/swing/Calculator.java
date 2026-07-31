@@ -576,8 +576,8 @@ public class Calculator extends JPanel implements ActionListener {
         else if (_op2.length() == 0) {
             return;
         }
-        Double op1;
-        Double op2;
+        double op1;
+        double op2;
         try {
             op1 = getDisplayFormat().parse(_op1.toString()).doubleValue();
             op2 = getDisplayFormat().parse(_op2.toString()).doubleValue();
@@ -697,7 +697,7 @@ public class Calculator extends JPanel implements ActionListener {
         int old = _operator;
         if (old != operator) {
             _operator = operator;
-            firePropertyChange(PROPERTY_OPERATOR, new Integer(old), new Integer(operator));
+            firePropertyChange(PROPERTY_OPERATOR, old, operator);
         }
     }
 

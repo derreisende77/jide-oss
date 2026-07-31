@@ -3,8 +3,10 @@ package com.jidesoft.swing;
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
+import java.io.Serial;
 
 public class CheckBoxListSelectionModel extends DefaultListSelectionModel implements ListDataListener {
+    @Serial
     private static final long serialVersionUID = -4133723317923726786L;
     private ListModel _model;
     private boolean _allEntryConsidered = true;

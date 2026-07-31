@@ -6,8 +6,6 @@
 package com.jidesoft.swing;
 
 import com.jidesoft.utils.PortingUtils;
-import com.jidesoft.utils.SystemInfo;
-
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -329,7 +327,7 @@ public class AutoCompletion {
             }
         };
         // Bug 5100422 on Java 1.5: Editable JComboBox won't hide popup when tabbing out
-        _hidePopupOnFocusLoss = SystemInfo.isJdk15Above();
+        _hidePopupOnFocusLoss = true;
 //        // Highlight whole text when gaining focus
 //        _editorFocusListener = new FocusAdapter() {
 //            @Override

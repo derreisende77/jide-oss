@@ -84,7 +84,7 @@ public class CachedArrayList<E> extends ArrayList<E> {
     }
 
     protected Map<Object, IntegerWrapper> createCache() {
-        return new IdentityHashMap<Object, IntegerWrapper>();
+        return new IdentityHashMap<>();
     }
 
     /**
@@ -197,16 +197,12 @@ public class CachedArrayList<E> extends ArrayList<E> {
 
     @Override
     public E set(int index, E element) {
+        E oldElement = super.set(index, element);
+        uncacheAll();
         if (!isLazyCaching()) {
-            initializeCache();
-            E e = super.set(index, element);
-            uncacheIt(e);
-            cacheIt(element, index);
-            return e;
+            cacheAll();
         }
-        else {
-            return super.set(index, element);
-        }
+        return oldElement;
     }
 
     /**
@@ -231,7 +227,7 @@ public class CachedArrayList<E> extends ArrayList<E> {
      */
     public synchronized void cacheAll() {
         _indexCache = createCache();
-        Integer i = 0;
+        int i = 0;
         for (Object elem : this) {
             if (_indexCache.get(elem) == null) {
                 _indexCache.put(elem, new IntegerWrapper(i));

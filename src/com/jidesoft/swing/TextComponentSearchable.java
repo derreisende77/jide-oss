@@ -40,8 +40,8 @@ import java.util.Iterator;
  *      }
  * <p/>
  *      protected boolean isActivateKey(KeyEvent e) { // change to a different activation key
- *          return (e.getID() == KeyEvent.KEY_PRESSED && e.getKeyCode() == KeyEvent.VK_F &&
- * (KeyEvent.CTRL_MASK & e.getModifiers()) != 0);
+ *          return (e.getID() == KeyEvent.KEY_PRESSED &amp;&amp; e.getKeyCode() == KeyEvent.VK_F &amp;&amp;
+ * (KeyEvent.CTRL_MASK &amp; e.getModifiers()) != 0);
  *      }
  * };
  * </pre></code>

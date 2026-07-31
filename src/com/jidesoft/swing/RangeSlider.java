@@ -83,12 +83,9 @@ public class RangeSlider extends JSlider {
         }
         try {
             Class<?> uiClass = Class.forName(UIManager.getString(getActualUIClassID()));
-            Class acClass = javax.swing.JComponent.class;
-            Method m = uiClass.getMethod("createUI", new Class[]{acClass});
-            if (m != null) {
-                Object uiObject = m.invoke(null, new Object[]{this});
-                setUI((ComponentUI) uiObject);
-            }
+            Method m = uiClass.getMethod("createUI", JComponent.class);
+            Object uiObject = m.invoke(null, this);
+            setUI((ComponentUI) uiObject);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -146,17 +143,11 @@ public class RangeSlider extends JSlider {
      */
     public void setLowValue(int lowValue) {
         int old = getLowValue();
-        int high;
-        if ((lowValue + getModel().getExtent()) > getMaximum()) {
-            high = getMaximum();
-        }
-        else {
-            high = getHighValue();
-        }
-        int extent = high - lowValue;
+        int high = getHighValue();
+        int clampedLowValue = Math.max(getMinimum(), Math.min(lowValue, high));
 
         Object property = getClientProperty(CLIENT_PROPERTY_ADJUST_ACTION);
-        getModel().setRangeProperties(lowValue, extent,
+        getModel().setRangeProperties(clampedLowValue, high - clampedLowValue,
                 getMinimum(), getMaximum(), property == null || (!property.equals("scrollByBlock") && !property.equals("scrollByUnit")));
         firePropertyChange(PROPERTY_LOW_VALUE, old, getLowValue());
 

@@ -21,7 +21,7 @@ import java.beans.PropertyChangeListener;
 
 
 /**
- * A basic L&F implementation of Popup.
+ * A basic look and feel implementation of Popup.
  */
 public class BasicJidePopupUI extends PopupUI {
 

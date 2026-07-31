@@ -8,8 +8,6 @@ package com.jidesoft.swing;
 import com.jidesoft.plaf.LookAndFeelFactory;
 import com.jidesoft.plaf.UIDefaultsLookup;
 import com.jidesoft.plaf.basic.ThemePainter;
-import com.jidesoft.utils.SystemInfo;
-
 import javax.swing.*;
 import javax.swing.plaf.ButtonUI;
 import java.awt.*;
@@ -20,10 +18,9 @@ import java.awt.event.ActionEvent;
  * splits the button into two portions. The portion before the line is a button. User can click on it and trigger an
  * action. The portion after the line is a menu. User can click on it to show a normal menu.
  * <p/>
- * Please be noted that, when you try to use JideSplitButton as a menu item, please make sure that you will re-configure
- * its font with the following code. Otherwise, it may look different with the other JMenuItems.
+ * When using a JideSplitButton as a menu item, use the active FlatLaf menu font:
  * <code><pre>
- *         splitButton.setFont((Font) JideSwingUtilities.getMenuFont(Toolkit.getDefaultToolkit(), UIManager.getDefaults()));
+ *         splitButton.setFont(UIManager.getFont("MenuItem.font"));
  * </pre></code>
  */
 public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentStateSupport {
@@ -87,9 +84,9 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
     }
 
     /**
-     * Sets the L&F object that renders this component.
+     * Sets the look and feel object that renders this component.
      *
-     * @param ui the <code>JideSplitButtonUI</code> L&F object
+     * @param ui the <code>JideSplitButtonUI</code> look and feel object
      * @see javax.swing.UIDefaults#getUI
      */
     @Override
@@ -98,7 +95,7 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
     }
 
     /**
-     * Notification from the <code>UIFactory</code> that the L&F has changed. Called to replace the UI with the latest
+     * Notification from the <code>UIFactory</code> that the look and feel has changed. Called to replace the UI with the latest
      * version from the <code>UIFactory</code>.
      *
      * @see javax.swing.JComponent#updateUI
@@ -108,13 +105,13 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
         if (UIDefaultsLookup.get(uiClassID) == null) {
             LookAndFeelFactory.installJideExtension();
         }
-        setUI(UIManager.getUI(this));
+        super.updateUI();
         invalidate();
     }
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the look and feel class that renders this component.
      *
      * @return the string "JideSplitButtonUI"
      *
@@ -133,7 +130,7 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      * @return true if the toggle button is selected, otherwise false
      */
     public boolean isButtonSelected() {
-        return model instanceof SplitButtonModel && ((DefaultSplitButtonModel) model).isButtonSelected();
+        return model instanceof SplitButtonModel splitButtonModel && splitButtonModel.isButtonSelected();
     }
 
     /**
@@ -143,8 +140,8 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      * @param b true if the button is selected, otherwise false
      */
     public void setButtonSelected(boolean b) {
-        if (model instanceof SplitButtonModel) {
-            ((DefaultSplitButtonModel) model).setButtonSelected(b);
+        if (model instanceof SplitButtonModel splitButtonModel) {
+            splitButtonModel.setButtonSelected(b);
         }
     }
 
@@ -154,7 +151,7 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      * @return true if the button is enabled, otherwise false
      */
     public boolean isButtonEnabled() {
-        return model instanceof SplitButtonModel && ((DefaultSplitButtonModel) model).isButtonEnabled();
+        return model instanceof SplitButtonModel splitButtonModel && splitButtonModel.isButtonEnabled();
     }
 
     /**
@@ -163,8 +160,8 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      * @param b true if the button is enabled, otherwise false
      */
     public void setButtonEnabled(boolean b) {
-        if (model instanceof SplitButtonModel) {
-            ((DefaultSplitButtonModel) model).setButtonEnabled(b);
+        if (model instanceof SplitButtonModel splitButtonModel) {
+            splitButtonModel.setButtonEnabled(b);
         }
     }
 
@@ -296,9 +293,9 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      * Gets the background for different states. The states are defined in ThemePainter as constants. Not all states are
      * supported by all components. If the state is not supported or background is never set, it will return null.
      * <p/>
-     * Please note, each L&F will have its own way to paint the different backgrounds. This method allows you to
+     * Please note, each look and feel will have its own way to paint the different backgrounds. This method allows you to
      * customize it for each component to use a different background. So if you want the background to be used, don't
-     * use a ColorUIResource because UIResource is considered as a setting set by the L&F and any L&F can choose to
+     * use a ColorUIResource because UIResource is considered as a setting set by the look and feel and any look and feel can choose to
      * ignore it.
      *
      * @param state the button state. Please refer to {@link com.jidesoft.plaf.basic.ThemePainter} to see the list of
@@ -306,26 +303,22 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      * @return the background for different states.
      */
     public Color getBackgroundOfState(int state) {
-        switch (state) {
-            case ThemePainter.STATE_DEFAULT:
-                return getBackground();
-            case ThemePainter.STATE_ROLLOVER:
-                return getRolloverBackground();
-            case ThemePainter.STATE_SELECTED:
-                return getSelectedBackground();
-            case ThemePainter.STATE_PRESSED:
-                return getPressedBackground();
-        }
-        return null;
+        return switch (state) {
+            case ThemePainter.STATE_DEFAULT -> getBackground();
+            case ThemePainter.STATE_ROLLOVER -> getRolloverBackground();
+            case ThemePainter.STATE_SELECTED -> getSelectedBackground();
+            case ThemePainter.STATE_PRESSED -> getPressedBackground();
+            default -> null;
+        };
     }
 
     /**
      * Sets the background for different states.  The states are defined in ThemePainter as constants. Not all states
      * are supported by all components. If the state is not supported or background is never set, it will return null.
      * <p/>
-     * Please note, each L&F will have its own way to paint the different backgrounds. This method allows you to
+     * Please note, each look and feel will have its own way to paint the different backgrounds. This method allows you to
      * customize it for each component to use a different background. So if you want the background to be used, don't
-     * use a ColorUIResource because UIResource is considered as a setting set by the L&F and any L&F can choose to
+     * use a ColorUIResource because UIResource is considered as a setting set by the look and feel and any look and feel can choose to
      * ignore it.
      *
      * @param state the button state. Please refer to {@link com.jidesoft.plaf.basic.ThemePainter} to see the list of
@@ -334,18 +327,12 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      */
     public void setBackgroundOfState(int state, Color color) {
         switch (state) {
-            case ThemePainter.STATE_DEFAULT:
-                setBackground(color);
-                break;
-            case ThemePainter.STATE_ROLLOVER:
-                setRolloverBackground(color);
-                break;
-            case ThemePainter.STATE_SELECTED:
-                setSelectedBackground(color);
-                break;
-            case ThemePainter.STATE_PRESSED:
-                setPressedBackground(color);
-                break;
+            case ThemePainter.STATE_DEFAULT -> setBackground(color);
+            case ThemePainter.STATE_ROLLOVER -> setRolloverBackground(color);
+            case ThemePainter.STATE_SELECTED -> setSelectedBackground(color);
+            case ThemePainter.STATE_PRESSED -> setPressedBackground(color);
+            default -> {
+            }
         }
     }
 
@@ -353,9 +340,9 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      * Gets the foreground for different states. The states are defined in ThemePainter as constants. Not all states are
      * supported by all components. If the state is not supported or foreground is never set, it will return null.
      * <p/>
-     * Please note, each L&F will have its own way to paint the different foregrounds. This method allows you to
+     * Please note, each look and feel will have its own way to paint the different foregrounds. This method allows you to
      * customize it for each component to use a different foreground. So if you want the foreground to be used, don't
-     * use a ColorUIResource because UIResource is considered as a setting set by the L&F and any L&F can choose to
+     * use a ColorUIResource because UIResource is considered as a setting set by the look and feel and any look and feel can choose to
      * ignore it.
      *
      * @param state the button state. Please refer to {@link com.jidesoft.plaf.basic.ThemePainter} to see the list of
@@ -363,17 +350,13 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      * @return the foreground for different states.
      */
     public Color getForegroundOfState(int state) {
-        switch (state) {
-            case ThemePainter.STATE_DEFAULT:
-                return getDefaultForeground();
-            case ThemePainter.STATE_ROLLOVER:
-                return getRolloverForeground();
-            case ThemePainter.STATE_SELECTED:
-                return getSelectedForeground();
-            case ThemePainter.STATE_PRESSED:
-                return getPressedForeground();
-        }
-        return null;
+        return switch (state) {
+            case ThemePainter.STATE_DEFAULT -> getDefaultForeground();
+            case ThemePainter.STATE_ROLLOVER -> getRolloverForeground();
+            case ThemePainter.STATE_SELECTED -> getSelectedForeground();
+            case ThemePainter.STATE_PRESSED -> getPressedForeground();
+            default -> null;
+        };
     }
 
 
@@ -381,9 +364,9 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      * Sets the foreground for different states.  The states are defined in ThemePainter as constants. Not all states
      * are supported by all components. If the state is not supported or foreground is never set, it will return null.
      * <p/>
-     * Please note, each L&F will have its own way to paint the different foregrounds. This method allows you to
+     * Please note, each look and feel will have its own way to paint the different foregrounds. This method allows you to
      * customize it for each component to use a different foreground. So if you want the foreground to be used, don't
-     * use a ColorUIResource because UIResource is considered as a setting set by the L&F and any L&F can choose to
+     * use a ColorUIResource because UIResource is considered as a setting set by the look and feel and any look and feel can choose to
      * ignore it.
      *
      * @param state the button state. Please refer to {@link com.jidesoft.plaf.basic.ThemePainter} to see the list of
@@ -392,18 +375,12 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      */
     public void setForegroundOfState(int state, Color color) {
         switch (state) {
-            case ThemePainter.STATE_DEFAULT:
-                setDefaultForeground(color);
-                break;
-            case ThemePainter.STATE_ROLLOVER:
-                setRolloverForeground(color);
-                break;
-            case ThemePainter.STATE_SELECTED:
-                setSelectedForeground(color);
-                break;
-            case ThemePainter.STATE_PRESSED:
-                setPressedForeground(color);
-                break;
+            case ThemePainter.STATE_DEFAULT -> setDefaultForeground(color);
+            case ThemePainter.STATE_ROLLOVER -> setRolloverForeground(color);
+            case ThemePainter.STATE_SELECTED -> setSelectedForeground(color);
+            case ThemePainter.STATE_PRESSED -> setPressedForeground(color);
+            default -> {
+            }
         }
     }
 
@@ -412,9 +389,12 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
      */
     @Override
     public void doClick() {
-        Action action = getActionMap().get("pressed");
-        if (action != null) {
-            action.actionPerformed(new ActionEvent(this, 0, ""));
+        Action pressedAction = getActionMap().get("pressed");
+        Action releasedAction = getActionMap().get("released");
+        if (pressedAction != null && releasedAction != null) {
+            ActionEvent event = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "");
+            pressedAction.actionPerformed(event);
+            releasedAction.actionPerformed(event);
         }
     }
 
@@ -444,7 +424,7 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
     protected void setIconFromAction(Action action) {
         Icon icon = null;
         if (action != null) {
-            icon = SystemInfo.isJdk6Above() && !(getParent() instanceof JPopupMenu) ? (Icon) action.getValue(Action.LARGE_ICON_KEY) : null;
+            icon = !(getParent() instanceof JPopupMenu) ? (Icon) action.getValue(Action.LARGE_ICON_KEY) : null;
             if (icon == null) {
                 icon = (Icon) action.getValue(Action.SMALL_ICON);
             }
@@ -462,7 +442,7 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
         else if (Action.SMALL_ICON.equals(propertyName)) {
             setIconFromAction(action);
         }
-        else if (SystemInfo.isJdk6Above() && Action.LARGE_ICON_KEY.equals(propertyName)) {
+        else if (Action.LARGE_ICON_KEY.equals(propertyName)) {
             setIconFromAction(action);
         }
     }
@@ -479,8 +459,8 @@ public class JideSplitButton extends JideMenu implements ButtonStyle, ComponentS
         }
         else {
             Object value = action.getValue(ACTION_PROPERTY_SPLIT_BUTTON_ENABLED);
-            if (value instanceof Boolean) {
-                return (Boolean) value;
+            if (value instanceof Boolean enabled) {
+                return enabled;
             }
             else {
                 return action.isEnabled();

@@ -1,13 +1,24 @@
 package com.jidesoft.converter;
 
-import junit.framework.TestCase;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
-public class ObjectConverterManagerTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+
+public class ObjectConverterManagerTest {
+    @AfterEach
+    void restoreDefaultConverters() {
+        ObjectConverterManager.unregisterAllConverters();
+        ObjectConverterManager.resetInit();
+        ObjectConverterManager.initDefaultConverter();
+    }
+
+    @Test
     public void testInit() throws InterruptedException {
-        assertTrue(ObjectConverterManager.getConverter(Integer.class).getClass().getName().indexOf("IntegerConverter") != -1);
+        assertInstanceOf(IntegerConverter.class, ObjectConverterManager.getConverter(Integer.class));
         ObjectConverterManager.unregisterAllConverters();
         ObjectConverterManager.resetInit();
         ObjectConverterManager.registerConverter(Integer.class, new DefaultObjectConverter());
-        assertTrue(ObjectConverterManager.getConverter(Integer.class).getClass().getName().indexOf("DefaultObjectConverter") != -1);
+        assertInstanceOf(DefaultObjectConverter.class, ObjectConverterManager.getConverter(Integer.class));
     }
 }

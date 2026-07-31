@@ -6,9 +6,6 @@
 package com.jidesoft.swing;
 
 import com.jidesoft.dialog.JideOptionPane;
-import com.jidesoft.utils.SecurityUtils;
-import com.jidesoft.utils.SystemInfo;
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.Serializable;
@@ -152,7 +149,7 @@ public class JideBoxLayout implements LayoutManager2, Serializable {
                 }
                 boolean success = calculateComponentSizes(availableSize, 0, _target.getComponentCount());
                 if (!success) {
-                    if (!isAlwaysLayout() && "false".equals(SecurityUtils.getProperty("JideBoxLayout.alwaysLayout", "false"))) {
+                    if (!isAlwaysLayout() && "false".equals(System.getProperty("JideBoxLayout.alwaysLayout", "false"))) {
                         for (int i = 0; i < _target.getComponentCount(); i++) {
                             Component comp = _target.getComponent(i);
                             setComponentToSize(comp, 0, 0, insets, containerSize); // set size to zero to clear the layout
@@ -180,7 +177,7 @@ public class JideBoxLayout implements LayoutManager2, Serializable {
                     }
                     boolean success = calculateComponentSizes(availableSize, 0, _target.getComponentCount());
                     if (!success) {
-                        if (!isAlwaysLayout() && "false".equals(SecurityUtils.getProperty("JideBoxLayout.alwaysLayout", "false"))) {
+                        if (!isAlwaysLayout() && "false".equals(System.getProperty("JideBoxLayout.alwaysLayout", "false"))) {
                             for (int i = 0; i < _target.getComponentCount(); i++) {
                                 Component comp = _target.getComponent(i);
                                 setComponentToSize(comp, 0, 0, insets, containerSize); // set size to zero to clear the layout
@@ -291,7 +288,7 @@ public class JideBoxLayout implements LayoutManager2, Serializable {
             }
         }
 
-        if (!isAlwaysLayout() && "false".equals(SecurityUtils.getProperty("JideBoxLayout.alwaysLayout", "false")) && availableSizeExcludeFixed - varMinSize < 0) {
+        if (!isAlwaysLayout() && "false".equals(System.getProperty("JideBoxLayout.alwaysLayout", "false")) && availableSizeExcludeFixed - varMinSize < 0) {
             return false;
         }
 
@@ -377,7 +374,7 @@ public class JideBoxLayout implements LayoutManager2, Serializable {
     }
 
     private void setComponentSizeByGap(int index, int gap) {
-        if (SystemInfo.isJdk15Above() && _target.getComponent(index).isMinimumSizeSet()) {
+        if (_target.getComponent(index).isMinimumSizeSet()) {
             setComponentSize(index, Math.max(_componentSizes[index] + gap, getSizeForPrimaryAxis(_target.getComponent(index).getMinimumSize())));
         }
         else {

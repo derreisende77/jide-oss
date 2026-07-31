@@ -5,8 +5,6 @@
  */
 package com.jidesoft.swing;
 
-import com.jidesoft.utils.SystemInfo;
-
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
@@ -14,9 +12,13 @@ import javax.accessibility.AccessibleState;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Iterator;
 
 
 /**
@@ -105,6 +107,67 @@ public class JideToggleButton extends JideButton implements Accessible {
 
         // initialize
         init(text, icon);
+    }
+
+    private JideToggleButton getGroupSelection(FocusEvent.Cause cause) {
+        switch (cause) {
+            case ACTIVATION, TRAVERSAL, TRAVERSAL_UP, TRAVERSAL_DOWN, TRAVERSAL_FORWARD, TRAVERSAL_BACKWARD -> {
+                ButtonModel model = getModel();
+                JideToggleButton selection = this;
+                if (model != null) {
+                    ButtonGroup group = model.getGroup();
+                    if (group != null && group.getSelection() != null && !group.isSelected(model)) {
+                        Iterator<AbstractButton> iterator = group.getElements().asIterator();
+                        while (iterator.hasNext()) {
+                            AbstractButton member = iterator.next();
+                            if (group.isSelected(member.getModel())) {
+                                if (member instanceof JideToggleButton toggleButton
+                                        && toggleButton.isVisible() && toggleButton.isDisplayable()
+                                        && toggleButton.isEnabled() && toggleButton.isFocusable()) {
+                                    selection = toggleButton;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                return selection;
+            }
+            default -> {
+                return this;
+            }
+        }
+    }
+
+    /**
+     * Redirects activation and keyboard-traversal focus requests to the selected eligible button in this button's
+     * group, matching {@link JToggleButton}.
+     *
+     * @param cause the cause why the focus is requested
+     */
+    @Override
+    public void requestFocus(FocusEvent.Cause cause) {
+        getGroupSelection(cause).requestFocusUnconditionally(cause);
+    }
+
+    void requestFocusUnconditionally(FocusEvent.Cause cause) {
+        super.requestFocus(cause);
+    }
+
+    /**
+     * Redirects activation and keyboard-traversal focus requests to the selected eligible button in this button's
+     * group, matching {@link JToggleButton}.
+     *
+     * @param cause the cause why the focus is requested
+     * @return {@code true} if the component accepts the focus request
+     */
+    @Override
+    public boolean requestFocusInWindow(FocusEvent.Cause cause) {
+        return getGroupSelection(cause).requestFocusInWindowUnconditionally(cause);
+    }
+
+    boolean requestFocusInWindowUnconditionally(FocusEvent.Cause cause) {
+        return super.requestFocusInWindow(cause);
     }
 
     // *********************************************************************
@@ -199,11 +262,11 @@ public class JideToggleButton extends JideButton implements Accessible {
             if (!isPressed() && isArmed()) {
                 int modifiers = 0;
                 AWTEvent currentEvent = EventQueue.getCurrentEvent();
-                if (currentEvent instanceof InputEvent) {
-                    modifiers = ((InputEvent) currentEvent).getModifiers();
+                if (currentEvent instanceof InputEvent inputEvent) {
+                    modifiers = inputEvent.getModifiers();
                 }
-                else if (currentEvent instanceof ActionEvent) {
-                    modifiers = ((ActionEvent) currentEvent).getModifiers();
+                else if (currentEvent instanceof ActionEvent actionEvent) {
+                    modifiers = actionEvent.getModifiers();
                 }
                 fireActionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED,
                         getActionCommand(),
@@ -217,11 +280,11 @@ public class JideToggleButton extends JideButton implements Accessible {
     // to support SELECTED_KEY
 
     static boolean hasSelectedKey(Action a) {
-        return SystemInfo.isJdk6Above() && (a != null && a.getValue(Action.SELECTED_KEY) != null);
+        return a != null && a.getValue(Action.SELECTED_KEY) != null;
     }
 
     static boolean isSelected(Action a) {
-        return SystemInfo.isJdk6Above() && Boolean.TRUE.equals(a.getValue(Action.SELECTED_KEY));
+        return Boolean.TRUE.equals(a.getValue(Action.SELECTED_KEY));
     }
 
     /**
@@ -231,6 +294,9 @@ public class JideToggleButton extends JideButton implements Accessible {
      * @param a the Action
      */
     private void setSelectedFromAction(Action a) {
+        if (getModel() == null) {
+            return;
+        }
         boolean selected = false;
         if (a != null) {
             selected = isSelected(a);
@@ -241,9 +307,9 @@ public class JideToggleButton extends JideButton implements Accessible {
             setSelected(selected);
             // Make sure the change actually took effect
             if (!selected && isSelected()) {
-                if (getModel() instanceof DefaultButtonModel) {
-                    ButtonGroup group = ((DefaultButtonModel) getModel()).getGroup();
-                    if (group != null && SystemInfo.isJdk6Above()) {
+                if (getModel() instanceof DefaultButtonModel buttonModel) {
+                    ButtonGroup group = buttonModel.getGroup();
+                    if (group != null) {
                         group.clearSelection();
                     }
                 }
@@ -253,11 +319,9 @@ public class JideToggleButton extends JideButton implements Accessible {
 
     @Override
     protected void actionPropertyChanged(Action action, String propertyName) {
-        if (SystemInfo.isJdk6Above()) {
-            super.actionPropertyChanged(action, propertyName);
-            if (Action.SELECTED_KEY.equals(propertyName) && hasSelectedKey(action)) {
-                setSelectedFromAction(action);
-            }
+        super.actionPropertyChanged(action, propertyName);
+        if (Action.SELECTED_KEY.equals(propertyName) && hasSelectedKey(action)) {
+            setSelectedFromAction(action);
         }
     }
 
@@ -272,21 +336,27 @@ public class JideToggleButton extends JideButton implements Accessible {
     @Override
     protected ItemListener createItemListener() {
         if (_itemListener == null) {
-            _itemListener = new ItemListener() {
-                public void itemStateChanged(ItemEvent event) {
-                    fireItemStateChanged(event);
-                    Action action = getAction();
-                    if (action != null && hasSelectedKey(action)) {
-                        boolean selected = isSelected();
-                        boolean isActionSelected = isSelected(action);
-                        if (isActionSelected != selected && SystemInfo.isJdk6Above()) {
-                            action.putValue(Action.SELECTED_KEY, selected);
-                        }
-                    }
-                }
-            };
+            _itemListener = new ToggleButtonItemListener();
         }
         return _itemListener;
+    }
+
+    private class ToggleButtonItemListener implements ItemListener, Serializable {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public void itemStateChanged(ItemEvent event) {
+            fireItemStateChanged(event);
+            Action action = getAction();
+            if (action != null && hasSelectedKey(action)) {
+                boolean selected = isSelected();
+                boolean isActionSelected = isSelected(action);
+                if (isActionSelected != selected) {
+                    action.putValue(Action.SELECTED_KEY, selected);
+                }
+            }
+        }
     }
 
     // to support SELECTED_KEY - end

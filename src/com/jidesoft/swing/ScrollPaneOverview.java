@@ -9,8 +9,8 @@ import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 
 /**
- * Original code http://forums.java.net/jive/thread.jspa?forumID=73&threadID=14674 under "Do whatever you want with this
- * code" license
+ * Original code from {@code http://forums.java.net/jive/thread.jspa?forumID=73&threadID=14674} under the
+ * "Do whatever you want with this code" license.
  */
 @SuppressWarnings("serial")
 public class ScrollPaneOverview extends JComponent {

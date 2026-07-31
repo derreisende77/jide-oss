@@ -21,7 +21,8 @@ import java.awt.event.MouseEvent;
  * navigation, we want the selection effect to be easily noticeable and covers the row (instead of just one cell or one
  * node in the case of JTable and JTree respectively). We also want to have rollover effect the mouse is over a row.
  * Further more, the selection should have different color when the component is focused so that when multiple
- * navigation components are used, we can tell which one is active. Some L&Fs already do it by default but the most L&Fs
+ * navigation components are used, we can tell which one is active. Some look and feels already do it by default, but
+ * most look and feels do not.
  * don't do it. This class provides some common code to make the implementation easy.
  */
 abstract public class NavigationComponentHelper {

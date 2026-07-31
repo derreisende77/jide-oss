@@ -67,7 +67,7 @@ public class Gripper extends JComponent implements SwingConstants, Alignable, Dr
     }
 
     /**
-     * Returns the L&F object that renders this component.
+     * Returns the look and feel object that renders this component.
      *
      * @return the SeparatorUI object that renders this component
      */
@@ -90,7 +90,7 @@ public class Gripper extends JComponent implements SwingConstants, Alignable, Dr
 
 
     /**
-     * Returns the name of the L&F class that renders this component.
+     * Returns the name of the look and feel class that renders this component.
      *
      * @return the string "GripperUI"
      *

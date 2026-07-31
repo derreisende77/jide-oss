@@ -36,15 +36,15 @@ public class BooleanRange extends AbstractRange<Boolean> {
     }
 
     protected void setMin(boolean lower) {
-        boolean old = _lower;
+        Boolean old = _lower;
         _lower = lower;
-        firePropertyChange(PROPERTY_MIN, old, _lower.booleanValue());
+        firePropertyChange(PROPERTY_MIN, old, _lower);
     }
 
     protected void setMax(boolean upper) {
-        boolean old = _upper;
+        Boolean old = _upper;
         _upper = upper;
-        firePropertyChange(PROPERTY_MAX, old, _upper.booleanValue());
+        firePropertyChange(PROPERTY_MAX, old, _upper);
     }
 
     @Override

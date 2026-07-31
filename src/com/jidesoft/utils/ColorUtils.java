@@ -22,26 +22,60 @@ public class ColorUtils {
      * @param ratio the ratio. 0.5f if the same color. Any ratio greater than 0.5f will make the result color lighter.
      *              Smaller than 0.5f will make the color darker.
      *
-     * @return the derived color.
+    * @return the derived color.
      */
     public static Color getDerivedColor(Color color, float ratio) {
-        if (color != null) {
-            float[] hsl = RGBtoHSL(color);
-            if (hsl[2] < 0.4) {
-                hsl[2] = 0.4f;
-            }
-            if (ratio > 0.5) {
-                hsl[2] += (1f - hsl[2]) * 2 * (ratio - 0.5);
-            }
-            else {
-                hsl[2] -= hsl[2] * 2 * (0.5 - ratio);
-            }
-            int colorRGB = HSLtoRGB(hsl);
-            return new ColorUIResource(colorRGB);
-        }
-        else {
+        if (color == null) {
             return null;
         }
+
+        float r = color.getRed() / 256.0f;
+        float g = color.getGreen() / 256.0f;
+        float b = color.getBlue() / 256.0f;
+        float maxColor = Math.max(r, Math.max(g, b));
+        float minColor = Math.min(r, Math.min(g, b));
+
+        float h;
+        float s;
+        float l;
+        if (r == g && g == b) {
+            h = 0.0f;
+            s = 0.0f;
+            l = r;
+        }
+        else {
+            l = (minColor + maxColor) / 2;
+            s = l < 0.5
+                    ? (maxColor - minColor) / (maxColor + minColor)
+                    : (maxColor - minColor) / (2.0f - maxColor - minColor);
+
+            if (r == maxColor) {
+                h = (g - b) / (maxColor - minColor);
+            }
+            else if (g == maxColor) {
+                h = 2.0f + (b - r) / (maxColor - minColor);
+            }
+            else {
+                h = 4.0f + (r - g) / (maxColor - minColor);
+            }
+
+            h /= 6;
+            if (h < 0) {
+                h++;
+            }
+        }
+
+        if (l < 0.4) {
+            l = 0.4f;
+        }
+        if (ratio > 0.5) {
+            l += (1f - l) * 2 * (ratio - 0.5);
+        }
+        else {
+            l -= l * 2 * (0.5 - ratio);
+        }
+
+        return new ColorUIResource(hslToRGB(h, s, l));
     }
 
     /**
@@ -110,14 +144,15 @@ public class ColorUtils {
      *
      * @param hsl the hsl values.
      *
-     * @return the RGB color.
+    * @return the RGB color.
      */
     public static int HSLtoRGB(float[] hsl) {
-        float r, g, b, h, s, l; //this function works with floats between 0 and 1
+        return hslToRGB(hsl[0], hsl[1], hsl[2]);
+    }
+
+    private static int hslToRGB(float h, float s, float l) {
+        float r, g, b; //this function works with floats between 0 and 1
         float temp1, temp2, tempr, tempg, tempb;
-        h = hsl[0];
-        s = hsl[1];
-        l = hsl[2];
 
         // Then follows a trivial case: if the saturation is 0, the color will be a grayscale color,
         // and the calculation is then very simple: r, g and b are all set to the lightness.
