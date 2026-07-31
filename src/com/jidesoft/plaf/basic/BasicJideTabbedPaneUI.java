@@ -2965,15 +2965,15 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
             Object src = e.getSource();
             int index;
             boolean closeSelected = false;
-            if (src instanceof JideTabbedPane) {
-                pane = (JideTabbedPane) src;
+            if (src instanceof JideTabbedPane tabbedPane) {
+                pane = tabbedPane;
             }
-            else if (src instanceof JideTabbedPane.NoFocusButton && ((JideTabbedPane.NoFocusButton) src).getParent() instanceof JideTabbedPane) {
-                pane = (JideTabbedPane) ((JideTabbedPane.NoFocusButton) src).getParent();
+            else if (src instanceof JideTabbedPane.NoFocusButton button && button.getParent() instanceof JideTabbedPane) {
+                pane = (JideTabbedPane) button.getParent();
                 closeSelected = true;
             }
-            else if (src instanceof JideTabbedPane.NoFocusButton && ((JideTabbedPane.NoFocusButton) src).getParent() instanceof ScrollableTabPanel) {
-                pane = (JideTabbedPane) SwingUtilities.getAncestorOfClass(JideTabbedPane.class, (JideTabbedPane.NoFocusButton) src);
+            else if (src instanceof JideTabbedPane.NoFocusButton button && button.getParent() instanceof ScrollableTabPanel) {
+                pane = (JideTabbedPane) SwingUtilities.getAncestorOfClass(JideTabbedPane.class, button);
                 closeSelected = false;
             }
             else {
@@ -4096,8 +4096,7 @@ public class BasicJideTabbedPaneUI extends JideTabbedPaneUI implements SwingCons
                                 _layouted = true;
                             }
                         }
-                        else if (child instanceof JideTabbedPane.NoFocusButton) {
-                            JideTabbedPane.NoFocusButton scrollbutton = (JideTabbedPane.NoFocusButton) child;
+                        else if (child instanceof JideTabbedPane.NoFocusButton scrollbutton) {
                             if (_tabPane.isTabShown() && (scrollbutton.getType() != JideTabbedPane.BUTTON_CLOSE || !isShowCloseButtonOnTab())) {
                                 Dimension bsize = scrollbutton.getPreferredSize();
                                 int bx = 0;

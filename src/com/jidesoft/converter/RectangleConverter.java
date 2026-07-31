@@ -16,8 +16,7 @@ public class RectangleConverter extends ArrayConverter {
     }
 
     public String toString(Object object, ConverterContext context) {
-        if (object instanceof Rectangle) {
-            Rectangle rectangle = (Rectangle) object;
+        if (object instanceof Rectangle rectangle) {
             return arrayToString(new Object[]{
                     rectangle.x, rectangle.y, rectangle.width, rectangle.height
             }, context);

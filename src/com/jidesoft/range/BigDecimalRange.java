@@ -187,8 +187,7 @@ public class BigDecimalRange extends AbstractRange<BigDecimal> {
      */
     @Override
     public boolean equals(Object other) {
-        if (other instanceof BigDecimalRange) {
-            BigDecimalRange otherRange = (BigDecimalRange) other;
+        if (other instanceof BigDecimalRange otherRange) {
             return _min.equals(otherRange._min) && _max.equals(otherRange._max);
         }
         else {

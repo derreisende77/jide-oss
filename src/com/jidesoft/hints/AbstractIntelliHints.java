@@ -97,8 +97,7 @@ public abstract class AbstractIntelliHints implements IntelliHints {
             public boolean delegateActionPerformed(ActionEvent e) {
                 JComponent tf = (JComponent) e.getSource();
                 IntelliHints hints = getIntelliHints(tf);
-                if (hints instanceof AbstractIntelliHints) {
-                    AbstractIntelliHints aih = (AbstractIntelliHints) hints;
+                if (hints instanceof AbstractIntelliHints aih) {
                     if (tf.isEnabled() && !aih.isHintsPopupVisible()) {
                         aih.showHintsPopup(false);
                         return true;
@@ -474,8 +473,7 @@ public abstract class AbstractIntelliHints implements IntelliHints {
         public boolean delegateActionPerformed(ActionEvent e) {
             JComponent tf = (JComponent) e.getSource();
             IntelliHints hints = getIntelliHints(tf);
-            if (hints instanceof AbstractIntelliHints) {
-                AbstractIntelliHints aih = (AbstractIntelliHints) hints;
+            if (hints instanceof AbstractIntelliHints aih) {
                 aih.hideHintsPopup();
                 if (aih.getSelectedHint() != null) {
                     aih.setHintsEnabled(false);
@@ -648,16 +646,15 @@ public abstract class AbstractIntelliHints implements IntelliHints {
         public boolean delegateActionPerformed(ActionEvent e) {
             JComponent tf = (JComponent) e.getSource();
             IntelliHints hints = getIntelliHints(tf);
-            if (hints instanceof AbstractIntelliHints) {
-                AbstractIntelliHints aih = (AbstractIntelliHints) hints;
+            if (hints instanceof AbstractIntelliHints aih) {
                 if (tf.isEnabled()) {
                     if (aih.isHintsPopupVisible()) {
                         Object key = aih.getDelegateComponent().getInputMap().get(_keyStroke);
                         key = key == null ? aih.getTextComponent().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).get(_keyStroke) : key;
                         if (key != null) {
                             Object action = aih.getDelegateComponent().getActionMap().get(key);
-                            if (action instanceof Action) {
-                                ((Action) action).actionPerformed(new ActionEvent(aih.getDelegateComponent(), 0, "" + key));
+                            if (action instanceof Action delegateAction) {
+                                delegateAction.actionPerformed(new ActionEvent(aih.getDelegateComponent(), 0, "" + key));
                                 return true;
                             }
                         }

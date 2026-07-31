@@ -1,0 +1,7 @@
+root = true
+
+[*]
+end_of_line = lf
+
+[*.java]
+charset = utf-8

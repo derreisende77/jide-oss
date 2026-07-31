@@ -12,8 +12,7 @@ import java.awt.*;
 class BasicFileSystemTreeCellRenderer extends DefaultTreeCellRenderer {
     @Override
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-        if (value instanceof BasicFileSystemTreeNode) {
-            BasicFileSystemTreeNode fileTreeNode = (BasicFileSystemTreeNode) value;
+        if (value instanceof BasicFileSystemTreeNode fileTreeNode) {
             JLabel label = (JLabel) super.getTreeCellRendererComponent(tree, fileTreeNode.getName(), sel, expanded, leaf, row, hasFocus);
             try {
                 label.setIcon(fileTreeNode.getIcon());

@@ -67,8 +67,7 @@ public class BasicJidePopupMenuUI extends BasicPopupMenuUI {
             };
             Component[] components = popupMenu.getComponents();
             for (Component component : components) {
-                if (component instanceof JMenuItem) {
-                    JMenuItem menuItem = (JMenuItem) component;
+                if (component instanceof JMenuItem menuItem) {
                     menuItem.addChangeListener(scrollListener);
                     menuItems.add(menuItem);
                 }

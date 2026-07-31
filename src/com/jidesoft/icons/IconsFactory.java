@@ -1109,8 +1109,7 @@ public class IconsFactory {
         g.fillRect(0, 0, img.getWidth(), img.getHeight());
         // If we are painting a JComponent then switch off double buffering because it
         // causes a failure when running headlessly on Linux
-        if (component instanceof JComponent) {
-            JComponent c = (JComponent) component;
+        if (component instanceof JComponent c) {
             boolean isDoubleBuffered = c.isDoubleBuffered();
             c.setDoubleBuffered(false);
             g.translate(-bounds.x, -bounds.y);

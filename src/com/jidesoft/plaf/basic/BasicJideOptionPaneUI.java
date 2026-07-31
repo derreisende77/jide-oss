@@ -318,8 +318,8 @@ public class BasicJideOptionPaneUI extends BasicOptionPaneUI {
                                 JButton defaultButton = (JButton) e.getSource();
                                 toggleDetailsArea();
                                 Container top = defaultButton.getTopLevelAncestor();
-                                if (top instanceof Window) {
-                                    ((Window) top).pack();
+                                if (top instanceof Window window) {
+                                    window.pack();
                                 }
                             }
                         });

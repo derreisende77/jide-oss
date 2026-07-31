@@ -21,8 +21,7 @@ class DialogPageListCellRenderer extends DefaultListCellRenderer {
             int index,
             boolean isSelected,
             boolean cellHasFocus) {
-        if (value instanceof AbstractDialogPage) {
-            AbstractDialogPage page = (AbstractDialogPage) value;
+        if (value instanceof AbstractDialogPage page) {
             return super.getListCellRendererComponent(list, page.getTitle(), index, isSelected, cellHasFocus);
         }
         else {

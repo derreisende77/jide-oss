@@ -1156,7 +1156,7 @@ public class BasicJideSplitButtonUI extends BasicJideMenuUI {
     }
 
     protected boolean isAlwaysDropdown(JMenuItem menuItem) {
-        return menuItem instanceof JideSplitButton && ((JideSplitButton) menuItem).isAlwaysDropdown();
+        return menuItem instanceof JideSplitButton splitButton && splitButton.isAlwaysDropdown();
     }
 
     @Override
@@ -1389,6 +1389,5 @@ public class BasicJideSplitButtonUI extends BasicJideMenuUI {
         return words;
     }
 }
-
 
 

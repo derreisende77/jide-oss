@@ -95,7 +95,7 @@ public class BasicJideButtonListener extends BasicButtonListener {
         MenuElement[] menuElements = manager.getSelectedPath();
         for (int i = menuElements.length - 1; i >= 0; i--) {
             MenuElement menuElement = menuElements[i];
-            if (menuElement instanceof JPopupMenu && ((JPopupMenu) menuElement).isAncestorOf(b)) {
+            if (menuElement instanceof JPopupMenu popupMenu && popupMenu.isAncestorOf(b)) {
                 b.getModel().setPressed(false);
                 b.getModel().setArmed(false);
                 b.getModel().setRollover(false);
@@ -245,4 +245,3 @@ public class BasicJideButtonListener extends BasicButtonListener {
         SwingUtilities.replaceUIInputMap(c, JComponent.WHEN_FOCUSED, km);
     }
 }
-

@@ -105,7 +105,7 @@ public class CheckBoxTreeCellRenderer extends JPanel implements TreeCellRenderer
             Border border = treeCellRendererComponent.getBorder();
             setBorder(border);
             treeCellRendererComponent.setBorder(BorderFactory.createEmptyBorder());
-            if (path == null || !(tree instanceof CheckBoxTree) || ((CheckBoxTree) tree).isCheckBoxVisible(path)) {
+            if (path == null || !(tree instanceof CheckBoxTree checkBoxTree) || checkBoxTree.isCheckBoxVisible(path)) {
                 remove(_emptyBox);
                 add(_checkBox, BorderLayout.BEFORE_LINE_BEGINS);
             }

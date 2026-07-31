@@ -162,8 +162,7 @@ public class AutoResizingTextArea extends JTextArea {
         JScrollPane scroll = getParentScrollPane();
         if (scroll != null) {
             Container parent = scroll.getParent();
-            if (parent != null && parent instanceof JComponent) {
-                JComponent component = (JComponent) parent;
+            if (parent instanceof JComponent component) {
                 component.revalidate();
             }
         }

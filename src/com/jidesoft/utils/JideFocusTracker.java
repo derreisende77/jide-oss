@@ -100,8 +100,7 @@ public class JideFocusTracker {
     protected void addInternalListeners(Component component) {
         if(!isExcludedComponent(component)) {
             component.addFocusListener(listenerFocus);
-            if (component instanceof Container) {
-                Container container = (Container) component;
+            if (component instanceof Container container) {
                 container.addContainerListener(listenerContainer);
                 for (int i = 0; i < container.getComponentCount(); i++) {
                     addInternalListeners(container.getComponent(i));
@@ -117,8 +116,7 @@ public class JideFocusTracker {
     protected void removeInternalListeners(Component component) {
         if(!isExcludedComponent(component)) {
             component.removeFocusListener(listenerFocus);
-            if (component instanceof Container) {
-                Container container = (Container) component;
+            if (component instanceof Container container) {
                 container.removeContainerListener(listenerContainer);
                 for (int i = 0; i < container.getComponentCount(); i++) {
                     removeInternalListeners(container.getComponent(i));

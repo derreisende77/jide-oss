@@ -377,15 +377,15 @@ public class ButtonPanel extends JPanel implements ButtonListener, ButtonNames {
                     switch (e.getID()) {
                         case ButtonEvent.ENABLE_BUTTON:
                             component.setVisible(true);
-                            if (component instanceof JButton && ((JButton) component).getAction() != null) {
-                                ((JButton) component).getAction().setEnabled(true);
+                            if (component instanceof JButton button && button.getAction() != null) {
+                                button.getAction().setEnabled(true);
                             }
                             component.setEnabled(true);
                             break;
                         case ButtonEvent.DISABLE_BUTTON:
                             component.setEnabled(false);
-                            if (component instanceof JButton && ((JButton) component).getAction() != null) {
-                                ((JButton) component).getAction().setEnabled(false);
+                            if (component instanceof JButton button && button.getAction() != null) {
+                                button.getAction().setEnabled(false);
                             }
                             component.setVisible(true);
                             break;

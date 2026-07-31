@@ -87,8 +87,7 @@ public class CategoryRange<T> extends AbstractRange<T> implements Iterable<Categ
                             return 1;
                         } else {
                             // Use natural sort order if available
-                            if (o1 instanceof Comparable) {
-                                Comparable t1 = (Comparable) o1;
+                            if (o1 instanceof Comparable t1) {
                                 return t1.compareTo(o2);
                             } else {
                                 // otherwise use the toString method to derive a string comparator

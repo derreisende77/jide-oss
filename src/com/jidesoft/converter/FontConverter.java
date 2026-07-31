@@ -14,8 +14,7 @@ import java.util.ResourceBundle;
  */
 public class FontConverter implements ObjectConverter {
     public String toString(Object object, ConverterContext context) {
-        if (object instanceof Font) {
-            Font font = (Font) object;
+        if (object instanceof Font font) {
             return font.getName() + ", " + getResourceString(font.getStyle()) + ", " + font.getSize();
         }
         else {

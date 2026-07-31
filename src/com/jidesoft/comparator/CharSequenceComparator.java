@@ -63,10 +63,8 @@ public class CharSequenceComparator implements Comparator<Object>, Serializable 
             return 1;
         }
 
-        if (o1 instanceof CharSequence) {
-            if (o2 instanceof CharSequence) {
-                CharSequence s1 = (CharSequence) o1;
-                CharSequence s2 = (CharSequence) o2;
+        if (o1 instanceof CharSequence s1) {
+            if (o2 instanceof CharSequence s2) {
                 return isCaseSensitive() ? compareCase(s1, s2) : compareIgnoreCase(s1, s2);
             }
             else {

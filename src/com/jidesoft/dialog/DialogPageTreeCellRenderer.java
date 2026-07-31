@@ -68,8 +68,7 @@ public class DialogPageTreeCellRenderer extends JLabel implements TreeCellRender
         if (obj instanceof Boolean)
             setText("Retrieving data...");
 
-        if (obj instanceof AbstractDialogPage) {
-            AbstractDialogPage idata = (AbstractDialogPage) obj;
+        if (obj instanceof AbstractDialogPage idata) {
             setText(idata.getTitle());
         }
         else {
@@ -80,7 +79,7 @@ public class DialogPageTreeCellRenderer extends JLabel implements TreeCellRender
         setFont(tree.getFont());
 
         boolean treeIsEnabled = tree.isEnabled();
-        boolean nodeIsEnabled = !(value instanceof MutableTreeNodeEx) || ((MutableTreeNodeEx) value).isEnabled();
+        boolean nodeIsEnabled = !(value instanceof MutableTreeNodeEx extendedNode) || extendedNode.isEnabled();
         boolean isEnabled = (treeIsEnabled && nodeIsEnabled);
         setEnabled(isEnabled);
         if (!isEnabled) {

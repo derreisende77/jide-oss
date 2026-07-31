@@ -606,8 +606,8 @@ public class MultiplePageDialog extends StandardDialog {
                 public void contentsChanged(ListDataEvent e) {
                     if (e.getSource() instanceof PageList) {
                         Object o = ((PageList) e.getSource()).getSelectedItem();
-                        if (o instanceof AbstractDialogPage && ((AbstractDialogPage) o).isPageEnabled()) {
-                            setCurrentPage((AbstractDialogPage) o);
+                        if (o instanceof AbstractDialogPage page && page.isPageEnabled()) {
+                            setCurrentPage(page);
                         }
                     }
                 }
@@ -860,8 +860,8 @@ public class MultiplePageDialog extends StandardDialog {
                 }
 
                 Object userObject = treeNode.getUserObject();
-                if (userObject instanceof AbstractDialogPage && !userObject.equals(getCurrentPage()) && ((AbstractDialogPage) userObject).isPageEnabled()) {
-                    setCurrentPage((AbstractDialogPage) userObject, tree);
+                if (userObject instanceof AbstractDialogPage page && !page.equals(getCurrentPage()) && page.isPageEnabled()) {
+                    setCurrentPage(page, tree);
                     if (getCurrentPage() != userObject) {
                         // TODO select the old path.
                     }

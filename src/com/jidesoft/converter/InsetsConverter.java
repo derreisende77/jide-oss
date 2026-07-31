@@ -20,10 +20,9 @@ public class InsetsConverter extends ArrayConverter {
     }
 
     public String toString(Object object, ConverterContext context) {
-        if (object instanceof Insets) {
-            Insets Insets = (Insets) object;
+        if (object instanceof Insets insets) {
             return arrayToString(new Object[]{
-                    Insets.top, Insets.left, Insets.bottom, Insets.right
+                    insets.top, insets.left, insets.bottom, insets.right
             }, context);
         }
         else {

@@ -83,19 +83,19 @@ public class JideScrollPaneLayout extends ScrollPaneLayout implements JideScroll
     }
 
     protected boolean isHsbCoversWholeWidth(JScrollPane sp) {
-        return sp instanceof JideScrollPane && ((JideScrollPane) sp).isHorizontalScrollBarCoversWholeWidth();
+        return sp instanceof JideScrollPane jideScrollPane && jideScrollPane.isHorizontalScrollBarCoversWholeWidth();
     }
 
     protected boolean isVsbCoversWholeHeight(JScrollPane sp) {
-        return sp instanceof JideScrollPane && ((JideScrollPane) sp).isVerticalScrollBarCoversWholeHeight();
+        return sp instanceof JideScrollPane jideScrollPane && jideScrollPane.isVerticalScrollBarCoversWholeHeight();
     }
 
     protected boolean isColumnHeadersHeightUnified(JScrollPane sp) {
-        return sp instanceof JideScrollPane && ((JideScrollPane) sp).isColumnHeadersHeightUnified();
+        return sp instanceof JideScrollPane jideScrollPane && jideScrollPane.isColumnHeadersHeightUnified();
     }
 
     protected boolean isColumnFootersHeightUnified(JScrollPane sp) {
-        return sp instanceof JideScrollPane && ((JideScrollPane) sp).isColumnFootersHeightUnified();
+        return sp instanceof JideScrollPane jideScrollPane && jideScrollPane.isColumnFootersHeightUnified();
     }
 
     @Override

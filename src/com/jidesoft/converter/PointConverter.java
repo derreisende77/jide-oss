@@ -16,8 +16,7 @@ public class PointConverter extends ArrayConverter {
     }
 
     public String toString(Object object, ConverterContext context) {
-        if (object instanceof Point) {
-            Point point = (Point) object;
+        if (object instanceof Point point) {
             return arrayToString(new Object[]{
                     point.x, point.y
             }, context);

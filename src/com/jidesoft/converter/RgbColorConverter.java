@@ -60,8 +60,7 @@ public class RgbColorConverter extends ColorConverter {
     }
 
     public String toString(Object object, ConverterContext context) {
-        if (object instanceof Color) {
-            Color color = (Color) object;
+        if (object instanceof Color color) {
             StringBuffer colorText = new StringBuffer();
             colorText.append(color.getRed()).append(", ");
             colorText.append(color.getGreen()).append(", ");

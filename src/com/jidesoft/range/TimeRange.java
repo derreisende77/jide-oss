@@ -191,8 +191,7 @@ public class TimeRange extends AbstractRange<Date> {
 
     @Override
     public boolean equals(Object other) {
-        if (other instanceof TimeRange) {
-            TimeRange otherRange = (TimeRange) other;
+        if (other instanceof TimeRange otherRange) {
             return JideSwingUtilities.equals(_min, otherRange._min) && JideSwingUtilities.equals(_max, otherRange._max);
         }
         else {

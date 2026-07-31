@@ -41,8 +41,7 @@ public class MenuCheckIcon implements Icon, UIResource, Serializable {
 
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Icon icon = getIcon();
-        if (c instanceof AbstractButton) {
-            AbstractButton b = (AbstractButton) c;
+        if (c instanceof AbstractButton b) {
             if (b.isSelected()) {
                 icon.paintIcon(c, g, x, y);
             }

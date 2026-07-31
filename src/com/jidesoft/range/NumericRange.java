@@ -195,8 +195,7 @@ public class NumericRange extends AbstractNumericRange<Double> {
      */
     @Override
     public boolean equals(Object other) {
-        if (other instanceof NumericRange) {
-            NumericRange otherRange = (NumericRange) other;
+        if (other instanceof NumericRange otherRange) {
             return _min == otherRange._min && _max == otherRange._max;
         }
         else {

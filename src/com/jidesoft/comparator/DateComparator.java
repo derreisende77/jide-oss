@@ -53,11 +53,8 @@ public class DateComparator implements Comparator<Object> {
             return 1;
         }
 
-        if (o1 instanceof Date) {
-            if (o2 instanceof Date) {
-                Date l = (Date) o1;
-                Date r = (Date) o2;
-
+        if (o1 instanceof Date l) {
+            if (o2 instanceof Date r) {
                 if (l.before(r))
                     return -1;
                 else if (l.equals(r))

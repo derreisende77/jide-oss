@@ -16,8 +16,7 @@ public class DimensionConverter extends ArrayConverter {
     }
 
     public String toString(Object object, ConverterContext context) {
-        if (object instanceof Dimension) {
-            Dimension dim = (Dimension) object;
+        if (object instanceof Dimension dim) {
             return arrayToString(new Object[]{
                     dim.width, dim.height
             }, context);

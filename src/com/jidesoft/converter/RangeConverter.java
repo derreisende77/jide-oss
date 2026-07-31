@@ -74,8 +74,7 @@ public class RangeConverter implements ObjectConverter {
     }
 
     public String toString(Object object, ConverterContext context) {
-        if (object instanceof Range) {
-            Range range = (Range) object;
+        if (object instanceof Range range) {
             if (range.size() == 0) {
                 return arrayToString(new Object[]{range.lower()}, context);
             }

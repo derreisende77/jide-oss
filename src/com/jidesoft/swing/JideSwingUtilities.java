@@ -350,8 +350,7 @@ public class JideSwingUtilities implements SwingConstants {
             return;
         }
         Object property = masterViewport.getClientProperty(JideScrollPane.CLIENT_PROPERTY_SLAVE_VIEWPORT);
-        if (property instanceof Map) {
-            Map slaveViewportMap = (Map) property;
+        if (property instanceof Map slaveViewportMap) {
             slaveViewportMap.remove(slaveViewport);
             if (slaveViewportMap.isEmpty()) {
                 slaveViewportMap = null;
@@ -361,8 +360,7 @@ public class JideSwingUtilities implements SwingConstants {
         }
 
         property = slaveViewport.getClientProperty(JideScrollPane.CLIENT_PROPERTY_MASTER_VIEWPORT);
-        if (property instanceof Map) {
-            Map masterViewportMap = (Map) property;
+        if (property instanceof Map masterViewportMap) {
             masterViewportMap.remove(masterViewport);
             if (masterViewportMap.isEmpty()) {
                 masterViewportMap = null;
@@ -1077,8 +1075,7 @@ public class JideSwingUtilities implements SwingConstants {
             }
 
             public void action(Component c) {
-                if (c instanceof JComponent) {
-                    JComponent jc = (JComponent) c;
+                if (c instanceof JComponent jc) {
                     if (Boolean.TRUE.equals(jc.getClientProperty(SET_OPAQUE_RECURSIVELY_EXCLUDED))) {
                         return;
                     }

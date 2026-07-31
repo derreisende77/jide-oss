@@ -69,7 +69,7 @@ abstract public class NumberConverter implements ObjectConverter {
         // format on userObject has a higher priority.
         try {
             if (context == null || context.getUserObject() == null || !(context.getUserObject() instanceof NumberFormat)) {
-                if (object instanceof Number && ((Number) object).doubleValue() == Double.NaN) {
+                if (object instanceof Number number && number.doubleValue() == Double.NaN) {
                     return "";
                 }
                 else {

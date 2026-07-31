@@ -645,7 +645,7 @@ class ButtonPanelLayout implements LayoutManager2, Serializable {
     }
 
     private boolean shouldKeepPreferredWidth(Component component) {
-        return component instanceof JComponent && Boolean.TRUE.equals(((JComponent) component).getClientProperty(ButtonPanel.KEEP_PREFERRED_WIDTH));
+        return component instanceof JComponent jComponent && Boolean.TRUE.equals(jComponent.getClientProperty(ButtonPanel.KEEP_PREFERRED_WIDTH));
     }
 
     void checkContainer(Container target) {

@@ -275,8 +275,7 @@ public class PopupWindow {
 //                }
                 comp.addMouseListener(_mouseListener);
                 _grabbed.add(comp);
-                if (comp instanceof Container) {
-                    Container cont = (Container) comp;
+                if (comp instanceof Container cont) {
                     if (cont instanceof JLayeredPane) {
                         cont.addContainerListener(_containerListener);
                     }

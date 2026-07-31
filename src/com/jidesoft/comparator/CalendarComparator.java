@@ -48,11 +48,8 @@ public class CalendarComparator implements Comparator<Object> {
             return 1;
         }
 
-        if (o1 instanceof Calendar) {
-            if (o2 instanceof Calendar) {
-                Calendar l = (Calendar) o1;
-                Calendar r = (Calendar) o2;
-
+        if (o1 instanceof Calendar l) {
+            if (o2 instanceof Calendar r) {
                 if (l.before(r))
                     return -1;
                 else if (l.equals(r))

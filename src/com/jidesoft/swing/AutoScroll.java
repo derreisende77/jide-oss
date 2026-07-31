@@ -252,9 +252,9 @@ abstract public class AutoScroll {
      * @return the AutoScroll installed. Null is no AutoScroll was installed.
      */
     public static AutoScroll getAutoScroll(Component component) {
-        Object clientProperty = component instanceof JComponent ? ((JComponent) component).getClientProperty(CLIENT_PROPERTY_AUTO_SCROLL) : null;
-        if (clientProperty instanceof AutoScroll) {
-            return ((AutoScroll) clientProperty);
+        Object clientProperty = component instanceof JComponent jComponent ? jComponent.getClientProperty(CLIENT_PROPERTY_AUTO_SCROLL) : null;
+        if (clientProperty instanceof AutoScroll autoScroll) {
+            return autoScroll;
         }
         else {
             return null;

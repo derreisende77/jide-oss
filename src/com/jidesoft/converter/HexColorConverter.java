@@ -65,8 +65,7 @@ public class HexColorConverter extends ColorConverter {
     }
 
     public String toString(Object object, ConverterContext context) {
-        if (object instanceof Color) {
-            Color color = (Color) object;
+        if (object instanceof Color color) {
             StringBuffer colorText = new StringBuffer("#");
             if (isAlphaIncluded()) {
                 colorText.append(getHexString(color.getAlpha()));

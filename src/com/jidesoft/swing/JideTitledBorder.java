@@ -283,8 +283,7 @@ public class JideTitledBorder extends AbstractBorder {
                     border.paintBorder(c, g, borderX, borderY, borderW, borderH);
                 } else {
                     Graphics g2 = g.create();
-                    if (g2 instanceof Graphics2D) {
-                        Graphics2D g2d = (Graphics2D) g2;
+                    if (g2 instanceof Graphics2D g2d) {
                         Path2D path = new Path2D.Float();
                         path.append(new Rectangle(borderX, borderY, borderW, labelY - borderY), false);
                         path.append(new Rectangle(borderX, labelY, labelX - borderX - TEXT_SPACING, labelH), false);
@@ -329,8 +328,7 @@ public class JideTitledBorder extends AbstractBorder {
         Border border = getBorderUI();
         if (border == null) {
             insets.set(0, 0, 0, 0);
-        } else if (border instanceof AbstractBorder) {
-            AbstractBorder ab = (AbstractBorder) border;
+        } else if (border instanceof AbstractBorder ab) {
             insets = ab.getBorderInsets(c, insets);
         } else {
             Insets i = border.getBorderInsets(c);
@@ -624,8 +622,7 @@ public class JideTitledBorder extends AbstractBorder {
             if ((0 < i) && (i <= 6)) {
                 return i;
             }
-        } else if (value instanceof String) {
-            String s = (String) value;
+        } else if (value instanceof String s) {
             if (s.equalsIgnoreCase("ABOVE_TOP")) {
                 return ABOVE_TOP;
             }

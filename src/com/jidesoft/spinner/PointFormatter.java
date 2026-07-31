@@ -46,8 +46,7 @@ public class PointFormatter extends DefaultFormatter {
 
     @Override
     public String valueToString(Object value) throws ParseException {
-        if (value instanceof Point) {
-            Point point = (Point) value;
+        if (value instanceof Point point) {
             return "(" + point.x + ", " + point.y + ")";
         }
         else {

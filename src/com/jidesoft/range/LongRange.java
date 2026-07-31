@@ -166,8 +166,7 @@ public class LongRange extends AbstractNumericRange<Long> {
      */
     @Override
     public boolean equals(Object other) {
-        if (other instanceof LongRange) {
-            LongRange otherRange = (LongRange) other;
+        if (other instanceof LongRange otherRange) {
             return _min == otherRange._min && _max == otherRange._max;
         }
         else {

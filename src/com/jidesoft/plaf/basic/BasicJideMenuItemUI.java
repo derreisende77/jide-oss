@@ -676,8 +676,7 @@ public class BasicJideMenuItemUI extends MenuItemUI {
             //Get the maxAccWidth from the parent to calculate the offset.
             int accOffset = 0;
             Container parent = menuItem.getParent();
-            if (parent != null && parent instanceof JComponent) {
-                JComponent p = (JComponent) parent;
+            if (parent instanceof JComponent p) {
                 Integer maxValueInt = (Integer) p.getClientProperty(BasicJideMenuItemUI.MAX_ACC_WIDTH);
                 int maxValue = maxValueInt != null ?
                         maxValueInt : acceleratorRect.width;
@@ -1414,10 +1413,10 @@ public class BasicJideMenuItemUI extends MenuItemUI {
     }
 
     protected boolean isDownArrowVisible(Container c) {
-        if (c instanceof TopLevelMenuContainer && ((TopLevelMenuContainer) c).isMenuBar()) {
+        if (c instanceof TopLevelMenuContainer menuContainer && menuContainer.isMenuBar()) {
             return false;
         }
-        else if (c instanceof TopLevelMenuContainer && !((TopLevelMenuContainer) c).isMenuBar()) {
+        else if (c instanceof TopLevelMenuContainer menuContainer && !menuContainer.isMenuBar()) {
             return true;
         }
         else if (c instanceof JMenuBar) {

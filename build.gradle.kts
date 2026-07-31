@@ -62,7 +62,7 @@ dependencies {
 
 tasks.withType<JavaCompile>().configureEach {
 	options.release.set( 17 )
-	options.encoding = "ISO-8859-1"
+	options.encoding = "UTF-8"
 }
 
 tasks.test {
@@ -137,6 +137,9 @@ tasks.named<Jar>( "sourcesJar" ) {
 tasks.javadoc {
 	options {
 		this as StandardJavadocDocletOptions
+		encoding = "UTF-8"
+		charSet = "UTF-8"
+		docEncoding = "UTF-8"
 		use( true )
 		addStringOption( "Xdoclint:none", "-Xdoclint:none" )
 	}

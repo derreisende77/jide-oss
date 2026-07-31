@@ -26,8 +26,8 @@ public class PercentConverter extends NumberFormatConverter {
     @Override
     public Object fromString(String string, ConverterContext context) {
         Object o = super.fromString(string, context);
-        if (string != null && !string.trim().endsWith("%") && o instanceof Number && ((Number) o).doubleValue() > 1) {
-            o = ((Number) o).doubleValue() / 100;
+        if (string != null && !string.trim().endsWith("%") && o instanceof Number number && number.doubleValue() > 1) {
+            o = number.doubleValue() / 100;
         }
         return o;
     }

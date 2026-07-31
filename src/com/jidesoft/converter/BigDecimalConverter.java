@@ -25,8 +25,7 @@ public class BigDecimalConverter extends NumberFormatConverter {
 
     @Override
     public String toString(Object obj, ConverterContext convertercontext) {
-        if (obj instanceof BigDecimal) {
-            BigDecimal decimal = (BigDecimal) obj;
+        if (obj instanceof BigDecimal decimal) {
             if (decimal.doubleValue() == Double.NaN)
                 return "";
             return super.toString(decimal, convertercontext);
